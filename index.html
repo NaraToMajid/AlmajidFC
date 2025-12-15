@@ -210,11 +210,6 @@
             height: 100%;
             object-fit: cover;
             background-color: var(--secondary-black);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--gray-medium);
-            font-size: 5rem;
         }
 
         .main-title {
@@ -734,6 +729,11 @@
             background-color: var(--gray-dark);
         }
 
+        .ttt-cell.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
         /* Snake Game */
         .snake-container {
             max-width: 500px;
@@ -962,6 +962,7 @@
             font-size: 2.5rem;
             color: var(--gray-dark);
             transition: var(--transition);
+            cursor: pointer;
         }
 
         .star.active {
@@ -1174,7 +1175,7 @@
                 <div class="hero-content">
                     <div class="profile-container">
                         <div class="profile-img" id="profileImage">
-                            <i class="fas fa-user"></i>
+                            <img src="profile.webp" alt="Al-Majid Profile" style="width:100%;height:100%;object-fit:cover;">
                         </div>
                     </div>
                     <h1 class="main-title">Al-Majid</h1>
@@ -1397,23 +1398,19 @@
                     <div class="rating-stats">
                         <div class="average-rating" id="averageRating">0.0</div>
                         <div class="total-ratings">
-                            <div class="star-rating">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
+                            <div class="star-rating" id="averageStars">
+                                <!-- Average stars will be generated here -->
                             </div>
                             <p>Berdasarkan <span id="totalRatings">0</span> ulasan</p>
                         </div>
                     </div>
                     
                     <div class="star-rating" id="userRating">
-                        <i class="fas fa-star clickable" data-value="1"></i>
-                        <i class="fas fa-star clickable" data-value="2"></i>
-                        <i class="fas fa-star clickable" data-value="3"></i>
-                        <i class="fas fa-star clickable" data-value="4"></i>
-                        <i class="fas fa-star clickable" data-value="5"></i>
+                        <i class="fas fa-star" data-value="1"></i>
+                        <i class="fas fa-star" data-value="2"></i>
+                        <i class="fas fa-star" data-value="3"></i>
+                        <i class="fas fa-star" data-value="4"></i>
+                        <i class="fas fa-star" data-value="5"></i>
                     </div>
                     
                     <textarea class="rating-comment" id="ratingComment" placeholder="Tulis ulasan Anda tentang website ini... (Opsional)"></textarea>
@@ -1481,7 +1478,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             initializeApp();
             initializeParticles();
-            loadProfileImage();
             updateActiveUsersCount();
             
             // Clean up old data
@@ -1562,17 +1558,6 @@
                 },
                 retina_detect: true
             });
-        }
-
-        // ============== PROFILE IMAGE ==============
-        function loadProfileImage() {
-            const profileImg = document.getElementById('profileImage');
-            const savedImage = localStorage.getItem('profileImage');
-            if (savedImage) {
-                profileImg.innerHTML = `<img src="${savedImage}" alt="Profile" style="width:100%;height:100%;object-fit:cover;">`;
-            } else {
-                profileImg.innerHTML = '<i class="fas fa-user"></i>';
-            }
         }
 
         // ============== NAVIGATION ==============
@@ -2263,6 +2248,201 @@
                 question: "Siapa penulis novel 'Laskar Pelangi'?",
                 options: ["Tere Liye", "Andrea Hirata", "Dee Lestari", "Pramoedya Ananta Toer"],
                 answer: 1
+            },
+            {
+                question: "Berapa jumlah kaki yang dimiliki laba-laba?",
+                options: ["6", "8", "10", "12"],
+                answer: 1
+            },
+            {
+                question: "Apa nama gunung tertinggi di dunia?",
+                options: ["Kilimanjaro", "Everest", "Fuji", "Denali"],
+                answer: 1
+            },
+            {
+                question: "Siapa penulis naskah proklamasi Indonesia?",
+                options: ["Soekarno", "Mohammad Hatta", "Ahmad Soebardjo", "Sayuti Melik"],
+                answer: 0
+            },
+            {
+                question: "Apa nama buah yang menjadi bahan utama selai kacang?",
+                options: ["Kacang tanah", "Kacang hijau", "Kacang merah", "Kacang kedelai"],
+                answer: 0
+            },
+            {
+                question: "Berapakah hasil dari 15²?",
+                options: ["225", "250", "275", "300"],
+                answer: 0
+            },
+            {
+                question: "Apa nama planet terbesar di tata surya?",
+                options: ["Saturnus", "Jupiter", "Neptunus", "Uranus"],
+                answer: 1
+            },
+            {
+                question: "Siapa pelukis Mona Lisa?",
+                options: ["Vincent van Gogh", "Leonardo da Vinci", "Pablo Picasso", "Michelangelo"],
+                answer: 1
+            },
+            {
+                question: "Apa nama ibukota Jepang?",
+                options: ["Seoul", "Beijing", "Tokyo", "Bangkok"],
+                answer: 2
+            },
+            {
+                question: "Berapakah hasil dari ¼ + ½?",
+                options: ["¾", "½", "¼", "1"],
+                answer: 0
+            },
+            {
+                question: "Apa nama samudra terbesar di dunia?",
+                options: ["Samudra Atlantik", "Samudra Hindia", "Samudra Pasifik", "Samudra Arktik"],
+                answer: 2
+            },
+            {
+                question: "Siapa ilmuwan yang menemukan hukum gravitasi?",
+                options: ["Albert Einstein", "Isaac Newton", "Galileo Galilei", "Nikola Tesla"],
+                answer: 1
+            },
+            {
+                question: "Apa nama warna yang dihasilkan dari pencampuran kuning dan biru?",
+                options: ["Ungu", "Oranye", "Hijau", "Coklat"],
+                answer: 2
+            },
+            {
+                question: "Berapakah jumlah hari dalam tahun kabisat?",
+                options: ["365", "366", "364", "367"],
+                answer: 1
+            },
+            {
+                question: "Apa nama hewan yang menjadi simbol kebijaksanaan?",
+                options: ["Burung hantu", "Singa", "Gajah", "Merpati"],
+                answer: 0
+            },
+            {
+                question: "Siapa pencipta karakter Sherlock Holmes?",
+                options: ["Agatha Christie", "Arthur Conan Doyle", "J.K. Rowling", "Stephen King"],
+                answer: 1
+            },
+            {
+                question: "Apa nama makanan tradisional Indonesia dari kedelai?",
+                options: ["Tahu", "Tempe", "Kecap", "Tauco"],
+                answer: 1
+            },
+            {
+                question: "Berapakah jumlah pemain dalam satu tim sepak bola?",
+                options: ["10", "11", "12", "13"],
+                answer: 1
+            },
+            {
+                question: "Apa nama benua terbesar di dunia?",
+                options: ["Amerika", "Afrika", "Eropa", "Asia"],
+                answer: 3
+            },
+            {
+                question: "Siapa penemu telepon?",
+                options: ["Thomas Edison", "Alexander Graham Bell", "Nikola Tesla", "Guglielmo Marconi"],
+                answer: 1
+            },
+            {
+                question: "Apa nama buah yang kulitnya berwarna ungu dan dagingnya hijau?",
+                options: ["Alpukat", "Anggur", "Jambu", "Mangga"],
+                answer: 0
+            },
+            {
+                question: "Berapakah hasil dari 3⁴?",
+                options: ["64", "81", "100", "121"],
+                answer: 1
+            },
+            {
+                question: "Apa nama ibukota Australia?",
+                options: ["Sydney", "Melbourne", "Canberra", "Perth"],
+                answer: 2
+            },
+            {
+                question: "Siapa ilmuwan yang menemukan radioaktivitas?",
+                options: ["Marie Curie", "Albert Einstein", "Niels Bohr", "Ernest Rutherford"],
+                answer: 0
+            },
+            {
+                question: "Apa nama alat musik tradisional Jawa?",
+                options: ["Gitar", "Gamelan", "Angklung", "Suling"],
+                answer: 1
+            },
+            {
+                question: "Berapakah jumlah sisi pada segi enam?",
+                options: ["4", "5", "6", "7"],
+                answer: 2
+            },
+            {
+                question: "Apa nama danau terdalam di dunia?",
+                options: ["Danau Toba", "Danau Baikal", "Danau Victoria", "Danau Superior"],
+                answer: 1
+            },
+            {
+                question: "Siapa pencipta Microsoft?",
+                options: ["Steve Jobs", "Bill Gates", "Mark Zuckerberg", "Larry Page"],
+                answer: 1
+            },
+            {
+                question: "Apa nama minuman tradisional Indonesia dari kelapa?",
+                options: ["Es Teh", "Es Jeruk", "Es Kelapa", "Es Dawet"],
+                answer: 2
+            },
+            {
+                question: "Berapakah jumlah tulang rusuk manusia?",
+                options: ["12 pasang", "13 pasang", "14 pasang", "15 pasang"],
+                answer: 0
+            },
+            {
+                question: "Apa nama planet dengan cincin yang paling terkenal?",
+                options: ["Jupiter", "Saturnus", "Uranus", "Neptunus"],
+                answer: 1
+            },
+            {
+                question: "Siapa penulis novel 'Harry Potter'?",
+                options: ["J.R.R. Tolkien", "J.K. Rowling", "George R.R. Martin", "Stephenie Meyer"],
+                answer: 1
+            },
+            {
+                question: "Apa nama sungai terpanjang di dunia?",
+                options: ["Sungai Amazon", "Sungai Nil", "Sungai Yangtze", "Sungai Mississippi"],
+                answer: 1
+            },
+            {
+                question: "Berapakah hasil dari √144?",
+                options: ["10", "11", "12", "13"],
+                answer: 2
+            },
+            {
+                question: "Apa nama negara dengan populasi terbanyak di dunia?",
+                options: ["India", "Amerika Serikat", "Indonesia", "China"],
+                answer: 3
+            },
+            {
+                question: "Siapa pelukis 'The Starry Night'?",
+                options: ["Vincent van Gogh", "Claude Monet", "Salvador Dali", "Rembrandt"],
+                answer: 0
+            },
+            {
+                question: "Apa nama makanan Italia berbentuk bulat dengan topping?",
+                options: ["Pasta", "Risotto", "Pizza", "Lasagna"],
+                answer: 2
+            },
+            {
+                question: "Berapakah jumlah warna dalam pelangi?",
+                options: ["5", "6", "7", "8"],
+                answer: 2
+            },
+            {
+                question: "Apa nama alat untuk mengukur suhu?",
+                options: ["Barometer", "Termometer", "Hygrometer", "Speedometer"],
+                answer: 1
+            },
+            {
+                question: "Siapa penemu bola lampu pijar?",
+                options: ["Thomas Edison", "Nikola Tesla", "Alexander Graham Bell", "Michael Faraday"],
+                answer: 0
             }
         ];
         
@@ -2276,14 +2456,23 @@
         function loadQuizQuestion() {
             const quizContainer = document.getElementById('quizContainer');
             
-            if (currentQuizQuestionIndex >= quizQuestions.length) {
+            // Shuffle questions and take 10 random questions
+            if (currentQuizQuestionIndex === 0) {
+                // Shuffle the entire array
+                for (let i = quizQuestions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [quizQuestions[i], quizQuestions[j]] = [quizQuestions[j], quizQuestions[i]];
+                }
+            }
+            
+            if (currentQuizQuestionIndex >= 10) {
                 // Quiz completed
                 quizContainer.innerHTML = `
                     <div class="quiz-container">
                         <div class="quiz-question">Kuis selesai!</div>
                         <div id="quizResult">
                             <p style="text-align: center; font-size: 1.2rem; padding: 20px; background-color: var(--secondary-black); border-radius: 10px;">
-                                Skor akhir Anda: ${quizScore}/${quizQuestions.length}<br>
+                                Skor akhir Anda: ${quizScore}/10<br>
                                 Poin yang didapat: ${quizScore * 10}
                             </p>
                         </div>
@@ -2313,7 +2502,7 @@
             
             quizContainer.innerHTML = `
                 <div class="quiz-container">
-                    <div class="quiz-question">Pertanyaan ${currentQuizQuestionIndex + 1}: ${question.question}</div>
+                    <div class="quiz-question">Pertanyaan ${currentQuizQuestionIndex + 1}/10: ${question.question}</div>
                     <div class="quiz-options" id="quizOptions"></div>
                     <div id="quizResult"></div>
                 </div>
@@ -2509,6 +2698,7 @@
         let tttBoard = ['', '', '', '', '', '', '', '', ''];
         let tttCurrentPlayer = 'X';
         let tttGameActive = true;
+        let tttPlayerTurn = true;
         
         function setupTicTacToe() {
             // Setup will be done in initTicTacToe
@@ -2527,6 +2717,7 @@
             tttBoard = ['', '', '', '', '', '', '', '', ''];
             tttCurrentPlayer = 'X';
             tttGameActive = true;
+            tttPlayerTurn = true;
             
             const tttGrid = document.getElementById('tttGrid');
             tttGrid.innerHTML = '';
@@ -2549,11 +2740,18 @@
         }
         
         function makeTTTMove(index) {
-            if (!tttGameActive || tttBoard[index] !== '') return;
+            if (!tttGameActive || tttBoard[index] !== '' || !tttPlayerTurn) return;
             
             // Player move
             tttBoard[index] = 'X';
+            tttPlayerTurn = false; // Disable player turn until AI moves
             updateTTTBoard();
+            
+            // Disable all cells while AI is thinking
+            document.querySelectorAll('.ttt-cell').forEach(cell => {
+                cell.classList.add('disabled');
+                cell.style.cursor = 'not-allowed';
+            });
             
             if (checkTTTWin('X')) {
                 document.getElementById('tttStatus').textContent = 'Anda Menang!';
@@ -2575,7 +2773,7 @@
             
             // AI move
             document.getElementById('tttStatus').textContent = 'Giliran AI...';
-            setTimeout(makeAIMove, 500);
+            setTimeout(makeAIMove, 800); // Delay for better UX
         }
         
         function makeAIMove() {
@@ -2624,6 +2822,17 @@
                 
                 document.getElementById('tttStatus').textContent = 'Giliran Anda';
             }
+            
+            // Re-enable player turn
+            tttPlayerTurn = true;
+            
+            // Re-enable empty cells
+            document.querySelectorAll('.ttt-cell').forEach((cell, index) => {
+                if (tttBoard[index] === '') {
+                    cell.classList.remove('disabled');
+                    cell.style.cursor = 'pointer';
+                }
+            });
         }
         
         function findWinningMove(player) {
@@ -2670,7 +2879,13 @@
             const cells = document.querySelectorAll('.ttt-cell');
             cells.forEach((cell, index) => {
                 cell.textContent = tttBoard[index];
-                cell.style.color = tttBoard[index] === 'X' ? 'var(--accent-red)' : '#4CAF50';
+                if (tttBoard[index] === 'X') {
+                    cell.style.color = 'var(--accent-red)';
+                } else if (tttBoard[index] === 'O') {
+                    cell.style.color = '#4CAF50';
+                } else {
+                    cell.style.color = 'var(--primary-white)';
+                }
             });
         }
 
@@ -2683,6 +2898,8 @@
         let snakeGameInterval;
         let snakeTouchStartX = 0;
         let snakeTouchStartY = 0;
+        let foodTypes = ['🍎', '🍌', '🍒', '🍇', '🍊'];
+        let currentFoodType = '🍎';
         
         function setupSnakeGame() {
             // Setup will be done in initSnakeGame
@@ -2699,7 +2916,7 @@
                         <button class="snake-control-btn" data-direction="left"><i class="fas fa-arrow-left"></i></button>
                         <button class="snake-control-btn" data-direction="right"><i class="fas fa-arrow-right"></i></button>
                     </div>
-                    <p style="margin-top: 20px;">Gunakan tombol panah atau kontrol di atas untuk menggerakkan ular. Makan makanan merah untuk mendapatkan poin!</p>
+                    <p style="margin-top: 20px;">Gunakan tombol panah atau kontrol di atas untuk menggerakkan ular. Makan buah merah untuk mendapatkan poin!</p>
                 </div>
             `;
             
@@ -2885,16 +3102,25 @@
                 snakeCtx.stroke();
             }
             
-            // Draw snake
+            // Draw snake (all in red)
             snake.forEach((segment, index) => {
+                // Head and body both in red gradient
+                const gradient = snakeCtx.createLinearGradient(
+                    segment.x * 20, segment.y * 20,
+                    segment.x * 20 + 20, segment.y * 20 + 20
+                );
+                
                 if (index === 0) {
-                    // Head
-                    snakeCtx.fillStyle = 'var(--accent-red)';
+                    // Head - brighter red
+                    gradient.addColorStop(0, '#ff3366');
+                    gradient.addColorStop(1, '#ff6699');
                 } else {
-                    // Body
-                    snakeCtx.fillStyle = '#4CAF50';
+                    // Body - darker red
+                    gradient.addColorStop(0, '#cc0044');
+                    gradient.addColorStop(1, '#ff3366');
                 }
                 
+                snakeCtx.fillStyle = gradient;
                 snakeCtx.fillRect(segment.x * 20 + 1, segment.y * 20 + 1, 18, 18);
                 
                 // Draw snake eyes on head
@@ -2929,11 +3155,11 @@
                 }
             });
             
-            // Draw food
-            snakeCtx.fillStyle = 'var(--accent-red)';
-            snakeCtx.beginPath();
-            snakeCtx.arc(food.x * 20 + 10, food.y * 20 + 10, 8, 0, Math.PI * 2);
-            snakeCtx.fill();
+            // Draw food as fruit emoji
+            snakeCtx.font = '16px Arial';
+            snakeCtx.textAlign = 'center';
+            snakeCtx.textBaseline = 'middle';
+            snakeCtx.fillText(currentFoodType, food.x * 20 + 10, food.y * 20 + 10);
         }
         
         function generateFood() {
@@ -2950,6 +3176,7 @@
             } while (foodOnSnake);
             
             food = newFood;
+            currentFoodType = foodTypes[Math.floor(Math.random() * foodTypes.length)];
         }
         
         function gameOverSnake() {
@@ -3109,7 +3336,7 @@
 
         // ============== RATING SYSTEM ==============
         function setupRating() {
-            const stars = document.querySelectorAll('#userRating .star.clickable');
+            const stars = document.querySelectorAll('#userRating .star');
             const submitRatingBtn = document.getElementById('submitRating');
             let selectedRating = 0;
             
@@ -3216,12 +3443,12 @@
                 document.getElementById('totalRatings').textContent = '0';
                 
                 // Reset stars
-                const stars = document.querySelector('.rating-stats .star-rating');
-                stars.innerHTML = '';
+                const starsContainer = document.getElementById('averageStars');
+                starsContainer.innerHTML = '';
                 for (let i = 0; i < 5; i++) {
                     const star = document.createElement('i');
                     star.className = 'fas fa-star';
-                    stars.appendChild(star);
+                    starsContainer.appendChild(star);
                 }
                 return;
             }
@@ -3235,7 +3462,7 @@
             document.getElementById('totalRatings').textContent = ratings.length;
             
             // Update star display
-            const starContainer = document.querySelector('.rating-stats .star-rating');
+            const starContainer = document.getElementById('averageStars');
             starContainer.innerHTML = '';
             
             const fullStars = Math.floor(averageRating);
@@ -3299,9 +3526,10 @@
             });
         }
         
-        // Initialize ratings
-        updateRatingStats();
-        loadReviews();
+        function loadRatings() {
+            updateRatingStats();
+            loadReviews();
+        }
 
         // ============== UTILITY FUNCTIONS ==============
         function showNotification(message) {
