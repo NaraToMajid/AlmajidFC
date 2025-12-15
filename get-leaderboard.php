@@ -1,29 +1,17 @@
 <?php
-require_once 'config.php';
+header('Access-Control-Allow-Origin: *');
+header('Content-Type: application/json');
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
-}
+$leaderboard = json_decode(file_get_contents('leaderboard.json'), true) ?? [];
 
-if (USE_JSON) {
-    $leaderboard = getJsonData('leaderboard.json');
-    
-    // Urutkan berdasarkan poin
-    usort($leaderboard, function($a, $b) {
-        return $b['points'] - $a['points'];
-    });
-    
-    response(true, 'Leaderboard retrieved', array_slice($leaderboard, 0, 10));
-} else {
-    $conn = getDBConnection();
-    $result = $conn->query("SELECT username, points, level FROM leaderboard ORDER BY points DESC LIMIT 10");
-    
-    $leaderboard = [];
-    while ($row = $result->fetch_assoc()) {
-        $leaderboard[] = $row;
-    }
-    
-    response(true, 'Leaderboard retrieved', $leaderboard);
-    $conn->close();
-}
+// Urutkan berdasarkan poin
+usort($leaderboard, function($a, $b) {
+    return $b['points'] - $a['points'];
+});
+
+echo json_encode([
+    'success' => true,
+    'message' => 'Leaderboard berhasil diambil',
+    'data' => array_slice($leaderboard, 0, 10) // Ambil top 10
+]);
 ?>
