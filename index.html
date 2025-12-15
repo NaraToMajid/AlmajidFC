@@ -1466,10 +1466,11 @@
         let activeUsers = {};
         let currentGame = null;
         let selectedRating = 0;
+        let currentSessionId = null;
         
         // ============== BACKEND CONFIGURATION ==============
-        const USE_BACKEND = false; // Set false untuk pakai localStorage saja
-        const BACKEND_URL = ''; // Kosongkan untuk relative path
+        const USE_BACKEND = true; // SELALU TRUE UNTUK ONLINE
+        const BACKEND_URL = window.location.origin; // Gunakan origin yang sama
         
         // ============== INITIALIZATION ==============
         document.addEventListener('DOMContentLoaded', function() {
@@ -1479,6 +1480,10 @@
         });
 
         async function initializeApp() {
+            // Generate session ID untuk user ini
+            currentSessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('sessionId', currentSessionId);
+            
             // Navigation
             setupNavigation();
             
@@ -1498,7 +1503,12 @@
             checkLoginStatus();
             
             // Update active users periodically
-            setInterval(updateActiveUsersCount, 30000);
+            setInterval(updateActiveUsersCount, 10000); // Every 10 seconds
+            setInterval(() => {
+                loadLeaderboard();
+                loadChatMessages();
+                loadRatings();
+            }, 5000); // Refresh data every 5 seconds
         }
 
         // ============== DATA MANAGEMENT ==============
@@ -1511,16 +1521,18 @@
                 ]);
             } catch (error) {
                 console.error('Error loading initial data:', error);
+                showNotification('Gagal memuat data. Coba refresh halaman.');
             }
         }
 
-        // ============== HELPER FUNCTIONS ==============
+        // ============== API FUNCTIONS ==============
         async function apiRequest(endpoint, method = 'GET', data = null) {
             if (!USE_BACKEND) {
-                return { success: false, message: 'Backend disabled, using localStorage' };
+                console.error('Backend should be enabled!');
+                return { success: false, message: 'Backend disabled' };
             }
             
-            const url = BACKEND_URL ? `${BACKEND_URL}/${endpoint}` : `./${endpoint}`;
+            const url = `${BACKEND_URL}/${endpoint}`;
             const options = {
                 method: method,
                 headers: {
@@ -1537,7 +1549,8 @@
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
-                return await response.json();
+                const result = await response.json();
+                return result;
             } catch (error) {
                 console.error(`API request failed (${endpoint}):`, error);
                 return { success: false, error: error.message };
@@ -1546,39 +1559,41 @@
 
         // ============== PARTICLES BACKGROUND ==============
         function initializeParticles() {
-            particlesJS("particles-js", {
-                particles: {
-                    number: { value: 60, density: { enable: true, value_area: 800 } },
-                    color: { value: "#ff3366" },
-                    shape: { type: "circle" },
-                    opacity: { value: 0.5, random: true },
-                    size: { value: 3, random: true },
-                    line_linked: {
-                        enable: true,
-                        distance: 150,
-                        color: "#ff3366",
-                        opacity: 0.4,
-                        width: 1
+            if (typeof particlesJS !== 'undefined') {
+                particlesJS("particles-js", {
+                    particles: {
+                        number: { value: 60, density: { enable: true, value_area: 800 } },
+                        color: { value: "#ff3366" },
+                        shape: { type: "circle" },
+                        opacity: { value: 0.5, random: true },
+                        size: { value: 3, random: true },
+                        line_linked: {
+                            enable: true,
+                            distance: 150,
+                            color: "#ff3366",
+                            opacity: 0.4,
+                            width: 1
+                        },
+                        move: {
+                            enable: true,
+                            speed: 2,
+                            direction: "none",
+                            random: true,
+                            straight: false,
+                            out_mode: "out",
+                            bounce: false
+                        }
                     },
-                    move: {
-                        enable: true,
-                        speed: 2,
-                        direction: "none",
-                        random: true,
-                        straight: false,
-                        out_mode: "out",
-                        bounce: false
-                    }
-                },
-                interactivity: {
-                    detect_on: "canvas",
-                    events: {
-                        onhover: { enable: true, mode: "repulse" },
-                        onclick: { enable: true, mode: "push" }
-                    }
-                },
-                retina_detect: true
-            });
+                    interactivity: {
+                        detect_on: "canvas",
+                        events: {
+                            onhover: { enable: true, mode: "repulse" },
+                            onclick: { enable: true, mode: "push" }
+                        }
+                    },
+                    retina_detect: true
+                });
+            }
         }
 
         // ============== NAVIGATION ==============
@@ -1666,27 +1681,35 @@
         }
 
         // ============== ACTIVE USERS ==============
-        function updateActiveUsersCount() {
-            const userId = localStorage.getItem('userId') || generateUserId();
-            localStorage.setItem('userId', userId);
+        async function updateActiveUsersCount() {
+            if (!currentSessionId) {
+                currentSessionId = localStorage.getItem('sessionId') || generateSessionId();
+            }
             
-            const now = Date.now();
-            activeUsers[userId] = now;
+            const username = currentUser ? currentUser.username : 'guest_' + currentSessionId.substr(0, 8);
             
-            Object.keys(activeUsers).forEach(key => {
-                if (now - activeUsers[key] > 5 * 60 * 1000) {
-                    delete activeUsers[key];
+            try {
+                // Update active user di server
+                const result = await apiRequest('update-active-user.php', 'POST', {
+                    sessionId: currentSessionId,
+                    username: username,
+                    timestamp: Date.now()
+                });
+                
+                if (result.success && result.data && result.data.activeUsers) {
+                    const activeCount = result.data.activeUsers;
+                    document.getElementById('activeUsersCount').textContent = activeCount;
+                    return activeCount;
                 }
-            });
+            } catch (error) {
+                console.error('Error updating active users:', error);
+            }
             
-            const activeCount = Object.keys(activeUsers).length;
-            document.getElementById('activeUsersCount').textContent = activeCount;
-            
-            return activeCount;
+            return 1;
         }
         
-        function generateUserId() {
-            return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        function generateSessionId() {
+            return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
 
         // ============== AUTHENTICATION SYSTEM ==============
@@ -1736,39 +1759,23 @@
                 return;
             }
             
-            if (USE_BACKEND) {
-                const result = await apiRequest('auth.php', 'POST', {
-                    action: 'login',
-                    username: username,
-                    password: password
-                });
+            const result = await apiRequest('auth.php', 'POST', {
+                action: 'login',
+                username: username,
+                password: password
+            });
+            
+            if (result.success) {
+                currentUser = result.data;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                updateUIAfterLogin();
+                showNotification(`Selamat datang, ${username}!`);
+                updateActiveUsersCount();
                 
-                if (result.success) {
-                    currentUser = result.data;
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                    updateUIAfterLogin();
-                    showNotification(`Selamat datang, ${username}!`);
-                    updateActiveUsersCount();
-                } else {
-                    showNotification(result.message);
-                }
+                // Update leaderboard untuk user ini
+                await updateLeaderboard(currentUser.points || 0);
             } else {
-                users = JSON.parse(localStorage.getItem('users')) || [];
-                const user = users.find(u => u.username === username && u.password === password);
-                
-                if (user) {
-                    currentUser = {
-                        username: user.username,
-                        points: user.points || 0,
-                        level: user.level || 1
-                    };
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                    updateUIAfterLogin();
-                    showNotification(`Selamat datang kembali, ${username}!`);
-                    updateActiveUsersCount();
-                } else {
-                    showNotification('Username atau password salah');
-                }
+                showNotification(result.message || 'Login gagal');
             }
         }
         
@@ -1797,54 +1804,24 @@
                 return;
             }
             
-            if (USE_BACKEND) {
-                const result = await apiRequest('auth.php', 'POST', {
-                    action: 'register',
-                    username: username,
-                    password: password
-                });
-                
-                if (result.success) {
-                    currentUser = result.data;
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                    updateUIAfterLogin();
-                    showNotification(`Akun berhasil dibuat! Selamat datang, ${username}!`);
-                    updateActiveUsersCount();
-                    document.getElementById('showLogin').click();
-                } else {
-                    showNotification(result.message);
-                }
-            } else {
-                users = JSON.parse(localStorage.getItem('users')) || [];
-                
-                if (users.find(u => u.username === username)) {
-                    showNotification('Username sudah digunakan');
-                    return;
-                }
-                
-                const newUser = {
-                    id: Date.now(),
-                    username: username,
-                    password: password,
-                    points: 0,
-                    level: 1,
-                    joined: new Date().toISOString()
-                };
-                
-                users.push(newUser);
-                localStorage.setItem('users', JSON.stringify(users));
-                
-                currentUser = {
-                    username: username,
-                    points: 0,
-                    level: 1
-                };
-                
+            const result = await apiRequest('auth.php', 'POST', {
+                action: 'register',
+                username: username,
+                password: password
+            });
+            
+            if (result.success) {
+                currentUser = result.data;
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
                 updateUIAfterLogin();
                 showNotification(`Akun berhasil dibuat! Selamat datang, ${username}!`);
                 updateActiveUsersCount();
                 document.getElementById('showLogin').click();
+                
+                // Tambah user ke leaderboard
+                await updateLeaderboard(0);
+            } else {
+                showNotification(result.message || 'Registrasi gagal');
             }
         }
         
@@ -1872,8 +1849,13 @@
         function checkLoginStatus() {
             const savedUser = localStorage.getItem('currentUser');
             if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                updateUIAfterLogin();
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    updateUIAfterLogin();
+                } catch (e) {
+                    console.error('Error parsing saved user:', e);
+                    localStorage.removeItem('currentUser');
+                }
             }
         }
         
@@ -2002,16 +1984,7 @@
             
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             
-            if (!USE_BACKEND) {
-                users = JSON.parse(localStorage.getItem('users')) || [];
-                const userIndex = users.findIndex(u => u.username === currentUser.username);
-                if (userIndex !== -1) {
-                    users[userIndex].points = currentUser.points;
-                    users[userIndex].level = currentUser.level;
-                    localStorage.setItem('users', JSON.stringify(users));
-                }
-            }
-            
+            // Update points di server
             await updateLeaderboard(currentUser.points);
             
             document.getElementById('currentPoints').textContent = currentUser.points;
@@ -2653,6 +2626,8 @@
         let food = {};
         let snakeScore = 0;
         let snakeGameInterval;
+        let snakeTouchStartX = 0;
+        let snakeTouchStartY = 0;
         let foodTypes = ['🍎', '🍌', '🍒', '🍇', '🍊'];
         let currentFoodType = '🍎';
         
@@ -2914,22 +2889,17 @@
         // ============== LEADERBOARD SYSTEM ==============
         async function loadLeaderboard() {
             try {
-                if (USE_BACKEND) {
-                    const result = await apiRequest('get-leaderboard.php');
-                    if (result.success) {
-                        leaderboard = result.data;
-                    } else {
-                        throw new Error('Failed to load from backend');
-                    }
+                const result = await apiRequest('get-leaderboard.php');
+                if (result.success) {
+                    leaderboard = result.data || [];
+                    updateLeaderboardUI();
                 } else {
-                    leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
+                    throw new Error('Failed to load leaderboard');
                 }
             } catch (error) {
                 console.error('Error loading leaderboard:', error);
-                leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
+                showNotification('Gagal memuat leaderboard');
             }
-            
-            updateLeaderboardUI();
         }
         
         function updateLeaderboardUI() {
@@ -2981,40 +2951,22 @@
             document.getElementById('refreshLeaderboard').addEventListener('click', loadLeaderboard);
         }
         
-        async function updateLeaderboard(pointsToAdd) {
+        async function updateLeaderboard(points) {
             if (!currentUser) return;
             
-            if (USE_BACKEND) {
+            try {
                 const result = await apiRequest('save-leaderboard.php', 'POST', {
                     username: currentUser.username,
-                    points: currentUser.points,
-                    level: currentUser.level
+                    points: points,
+                    level: currentUser.level || 1
                 });
                 
                 if (!result.success) {
-                    console.warn('Failed to update leaderboard via backend');
+                    console.warn('Failed to update leaderboard:', result.message);
                 }
+            } catch (error) {
+                console.error('Error updating leaderboard:', error);
             }
-            
-            leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
-            const existingIndex = leaderboard.findIndex(l => l.username === currentUser.username);
-            
-            if (existingIndex !== -1) {
-                leaderboard[existingIndex] = {
-                    username: currentUser.username,
-                    points: currentUser.points,
-                    level: currentUser.level
-                };
-            } else {
-                leaderboard.push({
-                    username: currentUser.username,
-                    points: currentUser.points,
-                    level: currentUser.level
-                });
-            }
-            
-            leaderboard.sort((a, b) => b.points - a.points);
-            localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
         }
 
         // ============== CHAT SYSTEM ==============
@@ -3040,59 +2992,49 @@
             const chatInput = document.getElementById('chatInput');
             const message = chatInput.value.trim();
             
-            if (!message) return;
+            if (!message) {
+                showNotification('Pesan tidak boleh kosong');
+                return;
+            }
             
-            const messageObj = {
-                user: currentUser.username,
-                message: message,
-                time: new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})
-            };
+            if (message.length > 500) {
+                showNotification('Pesan terlalu panjang (maks 500 karakter)');
+                return;
+            }
             
-            if (USE_BACKEND) {
+            try {
                 const result = await apiRequest('save-chat.php', 'POST', {
                     user: currentUser.username,
                     message: message
                 });
                 
-                if (!result.success) {
-                    console.warn('Failed to send chat via backend');
+                if (result.success) {
+                    chatInput.value = '';
+                    await loadChatMessages();
+                    
+                    const chatMessagesContainer = document.getElementById('chatMessages');
+                    chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                } else {
+                    showNotification('Gagal mengirim pesan: ' + (result.message || 'Unknown error'));
                 }
+            } catch (error) {
+                console.error('Error sending chat:', error);
+                showNotification('Gagal mengirim pesan');
             }
-            
-            chatMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
-            chatMessages.push(messageObj);
-            
-            if (chatMessages.length > 100) {
-                chatMessages = chatMessages.slice(-100);
-            }
-            
-            localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
-            
-            chatInput.value = '';
-            await loadChatMessages();
-            
-            const chatMessagesContainer = document.getElementById('chatMessages');
-            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
         }
         
         async function loadChatMessages() {
             try {
-                if (USE_BACKEND) {
-                    const result = await apiRequest('get-chat.php');
-                    if (result.success) {
-                        chatMessages = result.data;
-                    } else {
-                        throw new Error('Failed to load from backend');
-                    }
+                const result = await apiRequest('get-chat.php');
+                if (result.success) {
+                    chatMessages = result.data || [];
+                    updateChatUI();
                 } else {
-                    chatMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+                    throw new Error('Failed to load chat');
                 }
             } catch (error) {
                 console.error('Error loading chat:', error);
-                chatMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
             }
-            
-            updateChatUI();
         }
         
         function updateChatUI() {
@@ -3185,64 +3127,41 @@
             
             const comment = document.getElementById('ratingComment').value.trim();
             
-            const ratingObj = {
-                user: currentUser.username,
-                rating: selectedRating,
-                comment: comment,
-                date: new Date().toLocaleDateString('id-ID'),
-                timestamp: new Date().toISOString()
-            };
-            
-            if (USE_BACKEND) {
+            try {
                 const result = await apiRequest('save-rating.php', 'POST', {
                     user: currentUser.username,
                     rating: selectedRating,
                     comment: comment
                 });
                 
-                if (!result.success) {
-                    console.warn('Failed to save rating via backend');
+                if (result.success) {
+                    document.getElementById('ratingComment').value = '';
+                    selectedRating = 0;
+                    highlightStars(0);
+                    await loadRatings();
+                    showNotification('Terima kasih atas rating Anda!');
+                } else {
+                    showNotification('Gagal menyimpan rating: ' + (result.message || 'Unknown error'));
                 }
+            } catch (error) {
+                console.error('Error submitting rating:', error);
+                showNotification('Gagal menyimpan rating');
             }
-            
-            ratings = JSON.parse(localStorage.getItem('ratings')) || [];
-            
-            const existingIndex = ratings.findIndex(r => r.user === currentUser.username);
-            if (existingIndex !== -1) {
-                ratings[existingIndex] = ratingObj;
-            } else {
-                ratings.push(ratingObj);
-            }
-            
-            localStorage.setItem('ratings', JSON.stringify(ratings));
-            
-            document.getElementById('ratingComment').value = '';
-            selectedRating = 0;
-            highlightStars(0);
-            
-            await loadRatings();
-            showNotification('Terima kasih atas rating Anda!');
         }
         
         async function loadRatings() {
             try {
-                if (USE_BACKEND) {
-                    const result = await apiRequest('get-ratings.php');
-                    if (result.success) {
-                        ratings = result.data;
-                    } else {
-                        throw new Error('Failed to load from backend');
-                    }
+                const result = await apiRequest('get-ratings.php');
+                if (result.success) {
+                    ratings = result.data || [];
+                    updateRatingStats();
+                    loadReviews();
                 } else {
-                    ratings = JSON.parse(localStorage.getItem('ratings')) || [];
+                    throw new Error('Failed to load ratings');
                 }
             } catch (error) {
                 console.error('Error loading ratings:', error);
-                ratings = JSON.parse(localStorage.getItem('ratings')) || [];
             }
-            
-            updateRatingStats();
-            loadReviews();
         }
         
         function updateRatingStats() {
@@ -3292,7 +3211,7 @@
             reviewsList.innerHTML = '';
             
             const latestReviews = [...ratings]
-                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
                 .slice(0, 5);
             
             if (latestReviews.length === 0) {
@@ -3319,7 +3238,7 @@
                             <strong>${review.user}</strong>
                             <div style="margin-top: 5px;">${starsHtml}</div>
                         </div>
-                        <span style="font-size:0.8em;color:var(--gray-medium);">${review.date}</span>
+                        <span style="font-size:0.8em;color:var(--gray-medium);">${review.date || ''}</span>
                     </div>
                     ${review.comment ? `<p style="margin-top:10px;">${review.comment}</p>` : ''}
                 `;
