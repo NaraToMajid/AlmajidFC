@@ -1200,6 +1200,11 @@
             margin-bottom: 20px;
         }
 
+        /* Spotify iframe responsive */
+        iframe {
+            max-width: 100%;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .container {
@@ -1297,6 +1302,10 @@
             .chat-messages, .reviews-messages {
                 height: 200px;
             }
+            
+            iframe {
+                min-height: 300px !important;
+            }
         }
 
         @media (max-width: 480px) {
@@ -1376,6 +1385,10 @@
             
             .star {
                 font-size: 1.7rem;
+            }
+            
+            iframe {
+                min-height: 250px !important;
             }
         }
 
@@ -1486,6 +1499,10 @@
                         <a href="https://instagram.com/al_majid.16" class="btn" target="_blank">
                             <i class="fab fa-instagram"></i>
                             <span>Instagram</span>
+                        </a>
+                        <a href="#" class="btn" id="spotifyBtn">
+                            <i class="fab fa-spotify"></i>
+                            <span>Spotify Playlist</span>
                         </a>
                         <a href="mailto:almajidnafi@gmail.com" class="btn">
                             <i class="fas fa-envelope"></i>
@@ -1799,6 +1816,9 @@
             // Reviews System
             setupReviews();
             
+            // Spotify Modal
+            setupSpotifyModal();
+            
             // Check if user is already logged in
             await checkLoginStatus();
             
@@ -1813,6 +1833,40 @@
                 await loadRatings();
                 await loadReviews();
             }, 5000);
+        }
+
+        // ============== SPOTIFY MODAL ==============
+        function setupSpotifyModal() {
+            const spotifyBtn = document.getElementById('spotifyBtn');
+            const gameModal = document.getElementById('gameModal');
+            const gameModalContent = document.getElementById('gameModalContent');
+            const closeGameModal = document.getElementById('closeGameModal');
+            
+            spotifyBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Tampilkan modal dengan iframe Spotify
+                gameModalContent.innerHTML = `
+                    <div style="text-align: center; padding: 20px 10px;">
+                        <h3 style="margin-bottom: 15px; color: var(--accent-red);">My Spotify Playlist</h3>
+                        <div style="max-width: 100%; margin: 0 auto;">
+                            <iframe style="border-radius: 12px; width: 100%; min-height: 380px;" 
+                                    src="https://open.spotify.com/embed/playlist/5nKOoaqObDaARYtLFaY6Tc?si=toteXpGCQsW-MQKCFVzTkA&utm_source=generator&theme=0" 
+                                    frameBorder="0" 
+                                    allowfullscreen="" 
+                                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                                    loading="lazy">
+                            </iframe>
+                        </div>
+                        <p style="margin-top: 15px; color: var(--gray-medium); font-size: 0.9rem;">
+                            Dengarkan playlist favorit saya di Spotify
+                        </p>
+                    </div>
+                `;
+                
+                gameModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
         }
 
         // ============== DATA MANAGEMENT ==============
