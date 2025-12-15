@@ -1465,19 +1465,12 @@
         let ratings = [];
         let activeUsers = {};
         let currentGame = null;
-        let selectedRating = 0; // Variable untuk menyimpan rating yang dipilih
+        let selectedRating = 0;
         
-        // ============== API ENDPOINTS ==============
-        const API_BASE_URL = window.location.origin; // Gunakan origin yang sama
-        const CHAT_API_URL = `${API_BASE_URL}/save-chat.php`;
-        const RATING_API_URL = `${API_BASE_URL}/save-rating.php`;
-        const LEADERBOARD_API_URL = `${API_BASE_URL}/save-leaderboard.php`;
+        // ============== BACKEND CONFIGURATION ==============
+        const USE_BACKEND = false; // Set false untuk pakai localStorage saja
+        const BACKEND_URL = ''; // Kosongkan untuk relative path
         
-        // File JSON URLs
-        const CHAT_JSON_URL = `${API_BASE_URL}/chat.json`;
-        const RATINGS_JSON_URL = `${API_BASE_URL}/ratings.json`;
-        const LEADERBOARD_JSON_URL = `${API_BASE_URL}/leaderboard.json`;
-
         // ============== INITIALIZATION ==============
         document.addEventListener('DOMContentLoaded', function() {
             initializeApp();
@@ -1492,62 +1485,62 @@
             // Page Navigation
             setupPageNavigation();
             
-            // Auth System (masih pakai localStorage untuk auth)
+            // Auth System
             setupAuth();
             
             // Games
             setupGames();
             
-            // Leaderboard
-            await loadLeaderboard();
-            
-            // Chat
-            await setupChat();
-            
-            // Rating
-            await setupRating();
+            // Load initial data
+            await loadInitialData();
             
             // Check if user is already logged in
             checkLoginStatus();
             
             // Update active users periodically
-            setInterval(updateActiveUsersCount, 30000); // Every 30 seconds
+            setInterval(updateActiveUsersCount, 30000);
         }
 
-        // ============== HELPER FUNCTIONS ==============
-        async function fetchJSON(url) {
+        // ============== DATA MANAGEMENT ==============
+        async function loadInitialData() {
             try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return await response.json();
+                await Promise.all([
+                    loadLeaderboard(),
+                    loadRatings(),
+                    loadChatMessages()
+                ]);
             } catch (error) {
-                console.error('Error fetching JSON:', error);
-                return [];
+                console.error('Error loading initial data:', error);
             }
         }
 
-        async function saveToJSON(data, endpoint) {
+        // ============== HELPER FUNCTIONS ==============
+        async function apiRequest(endpoint, method = 'GET', data = null) {
+            if (!USE_BACKEND) {
+                return { success: false, message: 'Backend disabled, using localStorage' };
+            }
+            
+            const url = BACKEND_URL ? `${BACKEND_URL}/${endpoint}` : `./${endpoint}`;
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            };
+            
+            if (data && (method === 'POST' || method === 'PUT')) {
+                options.body = JSON.stringify(data);
+            }
+            
             try {
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
-                
+                const response = await fetch(url, options);
                 if (!response.ok) {
-                    throw new Error('Failed to save data');
+                    throw new Error(`HTTP ${response.status}`);
                 }
-                
                 return await response.json();
             } catch (error) {
-                console.error('Error saving data:', error);
-                // Fallback: Simpan ke localStorage jika API gagal
-                localStorage.setItem(endpoint.split('/').pop(), JSON.stringify(data));
-                return { success: false, message: 'Using localStorage fallback' };
+                console.error(`API request failed (${endpoint}):`, error);
+                return { success: false, error: error.message };
             }
         }
 
@@ -1599,31 +1592,25 @@
                     e.preventDefault();
                     const targetPage = this.getAttribute('data-page');
                     
-                    // Update active nav link
                     navLinks.forEach(l => l.classList.remove('active'));
                     this.classList.add('active');
                     
-                    // Switch page
                     switchPage(targetPage);
                     
-                    // Close mobile menu if open
                     navLinksContainer.classList.remove('active');
                 });
             });
             
-            // Mobile menu toggle
             mobileMenuBtn.addEventListener('click', function() {
                 navLinksContainer.classList.toggle('active');
             });
             
-            // Close mobile menu when clicking outside
             document.addEventListener('click', function(e) {
                 if (!navLinksContainer.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
                     navLinksContainer.classList.remove('active');
                 }
             });
             
-            // Share button functionality
             document.getElementById('shareBtn').addEventListener('click', function(e) {
                 e.preventDefault();
                 const url = window.location.href;
@@ -1634,15 +1621,11 @@
         }
         
         function switchPage(pageId) {
-            // Hide all pages
             document.querySelectorAll('.page').forEach(page => {
                 page.classList.remove('active');
             });
             
-            // Show target page
             document.getElementById(pageId).classList.add('active');
-            
-            // Update URL hash
             window.location.hash = pageId;
         }
 
@@ -1668,7 +1651,6 @@
                 });
             });
             
-            // Check URL hash on load
             if (window.location.hash) {
                 const pageId = window.location.hash.substring(1);
                 if (pageId === 'page1' || pageId === 'page2') {
@@ -1685,24 +1667,18 @@
 
         // ============== ACTIVE USERS ==============
         function updateActiveUsersCount() {
-            // Generate unique user ID for this session
             const userId = localStorage.getItem('userId') || generateUserId();
             localStorage.setItem('userId', userId);
             
-            // Get current timestamp
             const now = Date.now();
-            
-            // Update this user's activity
             activeUsers[userId] = now;
             
-            // Remove inactive users (more than 5 minutes)
             Object.keys(activeUsers).forEach(key => {
-                if (now - activeUsers[key] > 5 * 60 * 1000) { // 5 minutes
+                if (now - activeUsers[key] > 5 * 60 * 1000) {
                     delete activeUsers[key];
                 }
             });
             
-            // Update display count
             const activeCount = Object.keys(activeUsers).length;
             document.getElementById('activeUsersCount').textContent = activeCount;
             
@@ -1742,7 +1718,6 @@
             logoutBtn.addEventListener('click', logout);
             playGamesBtn.addEventListener('click', showGames);
             
-            // Enter key support for forms
             document.getElementById('loginPassword').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') login();
             });
@@ -1752,7 +1727,7 @@
             });
         }
         
-        function login() {
+        async function login() {
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
             
@@ -1761,25 +1736,43 @@
                 return;
             }
             
-            // Load users from localStorage
-            users = JSON.parse(localStorage.getItem('users')) || [];
-            
-            const user = users.find(u => u.username === username && u.password === password);
-            
-            if (user) {
-                currentUser = user;
-                localStorage.setItem('currentUser', JSON.stringify(user));
-                updateUIAfterLogin();
-                showNotification(`Selamat datang kembali, ${username}!`);
+            if (USE_BACKEND) {
+                const result = await apiRequest('auth.php', 'POST', {
+                    action: 'login',
+                    username: username,
+                    password: password
+                });
                 
-                // Update active users
-                updateActiveUsersCount();
+                if (result.success) {
+                    currentUser = result.data;
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    updateUIAfterLogin();
+                    showNotification(`Selamat datang, ${username}!`);
+                    updateActiveUsersCount();
+                } else {
+                    showNotification(result.message);
+                }
             } else {
-                showNotification('Username atau password salah');
+                users = JSON.parse(localStorage.getItem('users')) || [];
+                const user = users.find(u => u.username === username && u.password === password);
+                
+                if (user) {
+                    currentUser = {
+                        username: user.username,
+                        points: user.points || 0,
+                        level: user.level || 1
+                    };
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    updateUIAfterLogin();
+                    showNotification(`Selamat datang kembali, ${username}!`);
+                    updateActiveUsersCount();
+                } else {
+                    showNotification('Username atau password salah');
+                }
             }
         }
         
-        function register() {
+        async function register() {
             const username = document.getElementById('registerUsername').value.trim();
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('registerConfirmPassword').value;
@@ -1794,37 +1787,65 @@
                 return;
             }
             
-            // Load users from localStorage
-            users = JSON.parse(localStorage.getItem('users')) || [];
-            
-            if (users.find(u => u.username === username)) {
-                showNotification('Username sudah digunakan');
+            if (username.length < 3 || username.length > 20) {
+                showNotification('Username harus 3-20 karakter');
                 return;
             }
             
-            const newUser = {
-                id: Date.now(),
-                username: username,
-                password: password,
-                points: 0,
-                level: 1,
-                joined: new Date().toISOString()
-            };
+            if (password.length < 6) {
+                showNotification('Password minimal 6 karakter');
+                return;
+            }
             
-            users.push(newUser);
-            localStorage.setItem('users', JSON.stringify(users));
-            
-            currentUser = newUser;
-            localStorage.setItem('currentUser', JSON.stringify(newUser));
-            
-            updateUIAfterLogin();
-            showNotification(`Akun berhasil dibuat! Selamat datang, ${username}!`);
-            
-            // Update active users
-            updateActiveUsersCount();
-            
-            // Switch to login form
-            document.getElementById('showLogin').click();
+            if (USE_BACKEND) {
+                const result = await apiRequest('auth.php', 'POST', {
+                    action: 'register',
+                    username: username,
+                    password: password
+                });
+                
+                if (result.success) {
+                    currentUser = result.data;
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    updateUIAfterLogin();
+                    showNotification(`Akun berhasil dibuat! Selamat datang, ${username}!`);
+                    updateActiveUsersCount();
+                    document.getElementById('showLogin').click();
+                } else {
+                    showNotification(result.message);
+                }
+            } else {
+                users = JSON.parse(localStorage.getItem('users')) || [];
+                
+                if (users.find(u => u.username === username)) {
+                    showNotification('Username sudah digunakan');
+                    return;
+                }
+                
+                const newUser = {
+                    id: Date.now(),
+                    username: username,
+                    password: password,
+                    points: 0,
+                    level: 1,
+                    joined: new Date().toISOString()
+                };
+                
+                users.push(newUser);
+                localStorage.setItem('users', JSON.stringify(users));
+                
+                currentUser = {
+                    username: username,
+                    points: 0,
+                    level: 1
+                };
+                
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                updateUIAfterLogin();
+                showNotification(`Akun berhasil dibuat! Selamat datang, ${username}!`);
+                updateActiveUsersCount();
+                document.getElementById('showLogin').click();
+            }
         }
         
         function logout() {
@@ -1841,12 +1862,11 @@
             document.getElementById('currentUser').textContent = currentUser.username;
             document.getElementById('currentPoints').textContent = currentUser.points || 0;
             
-            // Update chat input availability
             document.getElementById('chatInput').disabled = false;
             document.getElementById('chatSend').disabled = false;
             
-            // Load leaderboard
             loadLeaderboard();
+            loadRatings();
         }
         
         function checkLoginStatus() {
@@ -1875,23 +1895,18 @@
                     
                     const gameId = this.getAttribute('data-game');
                     currentGame = gameId;
-                    
-                    // Show game modal
                     showGameModal(gameId);
                 });
             });
             
-            // Close game modal
             document.getElementById('closeGameModal').addEventListener('click', closeGameModal);
             
-            // Close modal when clicking outside
             document.getElementById('gameModal').addEventListener('click', function(e) {
                 if (e.target === this) {
                     closeGameModal();
                 }
             });
             
-            // Initialize individual games
             setupMemoryGame();
             setupReactionGame();
             setupQuizGame();
@@ -1904,14 +1919,10 @@
             const modal = document.getElementById('gameModal');
             const modalContent = document.getElementById('gameModalContent');
             
-            // Set modal content based on game
             modalContent.innerHTML = getGameHTML(gameId);
-            
-            // Show modal
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
             
-            // Initialize the selected game
             initializeGame(gameId);
         }
         
@@ -1919,10 +1930,7 @@
             const modal = document.getElementById('gameModal');
             modal.classList.remove('active');
             document.body.style.overflow = 'auto';
-            
-            // Stop any running games
             stopAllGames();
-            
             currentGame = null;
         }
         
@@ -1956,7 +1964,6 @@
         }
         
         function initializeGame(gameId) {
-            // Set up back button
             document.getElementById(`${gameId}Back`).addEventListener('click', closeGameModal);
             
             switch(gameId) {
@@ -1982,7 +1989,6 @@
         }
         
         function stopAllGames() {
-            // Stop any game intervals
             if (window.reactionTimeout) clearTimeout(window.reactionTimeout);
             if (window.typingTimerInterval) clearInterval(window.typingTimerInterval);
             if (window.snakeGameInterval) clearInterval(window.snakeGameInterval);
@@ -1991,22 +1997,23 @@
         async function updateUserPoints(pointsToAdd) {
             if (!currentUser) return;
             
-            // Update current user points
             currentUser.points = (currentUser.points || 0) + pointsToAdd;
             currentUser.level = Math.floor(currentUser.points / 100) + 1;
             
-            // Update in users array (localStorage)
-            users = JSON.parse(localStorage.getItem('users')) || [];
-            const userIndex = users.findIndex(u => u.username === currentUser.username);
-            if (userIndex !== -1) {
-                users[userIndex] = currentUser;
-                localStorage.setItem('users', JSON.stringify(users));
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            if (!USE_BACKEND) {
+                users = JSON.parse(localStorage.getItem('users')) || [];
+                const userIndex = users.findIndex(u => u.username === currentUser.username);
+                if (userIndex !== -1) {
+                    users[userIndex].points = currentUser.points;
+                    users[userIndex].level = currentUser.level;
+                    localStorage.setItem('users', JSON.stringify(users));
+                }
             }
             
-            // Update leaderboard (JSON file)
-            await updateLeaderboard(pointsToAdd);
+            await updateLeaderboard(currentUser.points);
             
-            // Update UI
             document.getElementById('currentPoints').textContent = currentUser.points;
             await loadLeaderboard();
             
@@ -2018,15 +2025,12 @@
         let flippedCards = [];
         let memoryMatches = 0;
         
-        function setupMemoryGame() {
-            // Setup will be done in initMemoryGame
-        }
+        function setupMemoryGame() {}
         
         function initMemoryGame() {
             const symbols = ['🍎', '🍌', '🍒', '🍇', '🍊', '🍓', '🍑', '🥭'];
             memoryCards = [...symbols, ...symbols];
             
-            // Shuffle cards
             for (let i = memoryCards.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [memoryCards[i], memoryCards[j]] = [memoryCards[j], memoryCards[i]];
@@ -2044,7 +2048,6 @@
             memoryMatches = 0;
             document.getElementById('memoryScore').textContent = '0';
             
-            // Create card elements
             memoryCards.forEach((symbol, index) => {
                 const card = document.createElement('div');
                 card.className = 'memory-card';
@@ -2066,12 +2069,10 @@
                 memoryGrid.appendChild(card);
             });
             
-            // Setup restart button
             document.getElementById('memoryRestart').addEventListener('click', initMemoryGame);
         }
         
         function flipMemoryCard(card) {
-            // If card is already flipped or two cards are already flipped, do nothing
             if (card.classList.contains('flipped') || flippedCards.length >= 2) {
                 return;
             }
@@ -2084,25 +2085,21 @@
                 const card2 = flippedCards[1];
                 
                 if (card1.dataset.symbol === card2.dataset.symbol) {
-                    // Match found
                     memoryMatches++;
                     const currentScore = parseInt(document.getElementById('memoryScore').textContent) + 10;
                     document.getElementById('memoryScore').textContent = currentScore;
                     
-                    // Add points to user
                     updateUserPoints(10);
                     
                     flippedCards = [];
                     
-                    // Check if game is complete
                     if (memoryMatches === 8) {
                         setTimeout(() => {
                             showNotification(`Selamat! Anda menyelesaikan permainan dengan ${currentScore} poin!`);
-                            updateUserPoints(50); // Bonus points for completing the game
+                            updateUserPoints(50);
                         }, 500);
                     }
                 } else {
-                    // No match, flip cards back after a delay
                     setTimeout(() => {
                         card1.classList.remove('flipped');
                         card2.classList.remove('flipped');
@@ -2118,9 +2115,7 @@
         let reactionGameActive = false;
         let reactionScore = 0;
         
-        function setupReactionGame() {
-            // Setup will be done in initReactionGame
-        }
+        function setupReactionGame() {}
         
         function initReactionGame() {
             const reactionContainer = document.getElementById('reactionContainer');
@@ -2146,7 +2141,6 @@
         
         function startReactionGame() {
             if (reactionGameActive) {
-                // If game is active, clicking restart will reset
                 reactionGameActive = false;
                 clearTimeout(reactionTimeout);
             }
@@ -2157,7 +2151,6 @@
             document.getElementById('reactionCircle').style.backgroundColor = 'var(--gray-dark)';
             document.getElementById('reactionCircle').textContent = 'Tunggu...';
             
-            // Random delay between 1-5 seconds
             const delay = Math.random() * 4000 + 1000;
             
             reactionTimeout = setTimeout(() => {
@@ -2175,20 +2168,16 @@
             const reactionTime = Date.now() - reactionStartTime;
             document.getElementById('reactionTime').textContent = reactionTime;
             
-            // Calculate score (faster reaction = higher score)
             let score = Math.max(1000 - reactionTime, 10);
             reactionScore += score;
             document.getElementById('reactionScore').textContent = Math.floor(reactionScore / 10);
             
-            // Update user points
             updateUserPoints(Math.floor(score / 10));
             
-            // Reset for next round
             reactionStartTime = null;
             document.getElementById('reactionCircle').style.backgroundColor = 'var(--gray-dark)';
             document.getElementById('reactionCircle').textContent = 'Siap untuk ronde berikutnya...';
             
-            // Start next round automatically after 1 second
             setTimeout(() => {
                 if (reactionGameActive) {
                     startReactionGame();
@@ -2261,15 +2250,12 @@
         let currentQuizQuestionIndex = 0;
         let quizScore = 0;
         
-        function setupQuizGame() {
-            // Setup will be done in loadQuizQuestion
-        }
+        function setupQuizGame() {}
         
         function loadQuizQuestion() {
             const quizContainer = document.getElementById('quizContainer');
             
             if (currentQuizQuestionIndex >= quizQuestions.length) {
-                // Quiz completed
                 quizContainer.innerHTML = `
                     <div class="quiz-container">
                         <div class="quiz-question">Kuis selesai!</div>
@@ -2287,7 +2273,6 @@
                     </div>
                 `;
                 
-                // Add points based on score
                 const pointsEarned = quizScore * 10;
                 updateUserPoints(pointsEarned);
                 
@@ -2323,15 +2308,12 @@
                 optionElement.dataset.index = index;
                 
                 optionElement.addEventListener('click', () => {
-                    // Remove selected class from all options
                     document.querySelectorAll('.quiz-option').forEach(opt => {
                         opt.classList.remove('selected');
                     });
                     
-                    // Add selected class to clicked option
                     optionElement.classList.add('selected');
                     
-                    // Check answer
                     if (index === question.answer) {
                         quizScore++;
                         document.getElementById('quizResult').innerHTML = "<p style='color: #4CAF50; text-align: center; padding: 10px;'>Benar! +10 poin</p>";
@@ -2341,7 +2323,6 @@
                     
                     document.getElementById('quizScore').textContent = quizScore * 10;
                     
-                    // Move to next question after 2 seconds
                     setTimeout(() => {
                         currentQuizQuestionIndex++;
                         loadQuizQuestion();
@@ -2353,7 +2334,6 @@
             
             document.getElementById('quizResult').innerHTML = "";
             
-            // Setup restart button
             document.getElementById('quizRestart').addEventListener('click', () => {
                 currentQuizQuestionIndex = 0;
                 quizScore = 0;
@@ -2376,9 +2356,7 @@
         let typingCorrectChars = 0;
         let typingTotalChars = 0;
         
-        function setupTypingGame() {
-            // Setup will be done in initTypingGame
-        }
+        function setupTypingGame() {}
         
         function initTypingGame() {
             const typingContainer = document.getElementById('typingContainer');
@@ -2396,25 +2374,19 @@
             
             resetTypingGame();
             
-            // Setup restart button
             document.getElementById('typingRestart').addEventListener('click', startTypingGame);
-            
-            // Setup input handler
             document.getElementById('typingInput').addEventListener('input', handleTypingInput);
         }
         
         function startTypingGame() {
             resetTypingGame();
             
-            // Select random text
             currentTypingText = typingTexts[Math.floor(Math.random() * typingTexts.length)];
             document.getElementById('typingText').textContent = currentTypingText;
             
-            // Enable input
             document.getElementById('typingInput').disabled = false;
             document.getElementById('typingInput').focus();
             
-            // Start timer
             typingTimeLeft = 60;
             updateTypingTimer();
             
@@ -2439,30 +2411,24 @@
             typingTotalChars = input.length;
             typingCorrectChars = 0;
             
-            // Calculate correct characters
             for (let i = 0; i < input.length; i++) {
                 if (i < originalText.length && input[i] === originalText[i]) {
                     typingCorrectChars++;
                 }
             }
             
-            // Calculate WPM (words per minute)
             const words = input.split(/\s+/).filter(word => word.length > 0).length;
             const timeInMinutes = (60 - typingTimeLeft) / 60;
             const wpm = timeInMinutes > 0 ? Math.floor(words / timeInMinutes) : 0;
             
-            // Calculate accuracy
             const accuracy = typingTotalChars > 0 ? Math.floor((typingCorrectChars / typingTotalChars) * 100) : 0;
             
-            // Calculate score
             const score = Math.floor((wpm * accuracy) / 10);
             document.getElementById('typingScore').textContent = score;
             
-            // Update UI
             document.getElementById('typingWPM').textContent = wpm;
             document.getElementById('typingAccuracy').textContent = accuracy;
             
-            // Update user points in real-time
             if (score > 0 && score % 10 === 0) {
                 updateUserPoints(1);
             }
@@ -2472,7 +2438,6 @@
             clearInterval(typingTimerInterval);
             document.getElementById('typingInput').disabled = true;
             
-            // Final score calculation
             const wpm = parseInt(document.getElementById('typingWPM').textContent);
             const accuracy = parseInt(document.getElementById('typingAccuracy').textContent);
             const finalScore = Math.floor((wpm * accuracy) / 10);
@@ -2503,9 +2468,7 @@
         let tttGameActive = true;
         let tttPlayerTurn = true;
         
-        function setupTicTacToe() {
-            // Setup will be done in initTicTacToe
-        }
+        function setupTicTacToe() {}
         
         function initTicTacToe() {
             const tttContainer = document.getElementById('tictactoeContainer');
@@ -2538,19 +2501,16 @@
                 tttGrid.appendChild(cell);
             }
             
-            // Setup restart button
             document.getElementById('tictactoeRestart').addEventListener('click', initTicTacToe);
         }
         
         function makeTTTMove(index) {
             if (!tttGameActive || tttBoard[index] !== '' || !tttPlayerTurn) return;
             
-            // Player move
             tttBoard[index] = 'X';
-            tttPlayerTurn = false; // Disable player turn until AI moves
+            tttPlayerTurn = false;
             updateTTTBoard();
             
-            // Disable all cells while AI is thinking
             document.querySelectorAll('.ttt-cell').forEach(cell => {
                 cell.classList.add('disabled');
                 cell.style.cursor = 'not-allowed';
@@ -2574,9 +2534,8 @@
                 return;
             }
             
-            // AI move
             document.getElementById('tttStatus').textContent = 'Giliran AI...';
-            setTimeout(makeAIMove, 800); // Delay for better UX
+            setTimeout(makeAIMove, 800);
         }
         
         function makeAIMove() {
@@ -2584,15 +2543,12 @@
             
             let moveIndex = -1;
             
-            // Check for winning move
             moveIndex = findWinningMove('O');
             
-            // If no winning move, block player's winning move
             if (moveIndex === -1) {
                 moveIndex = findWinningMove('X');
             }
             
-            // If no blocking move, make random move
             if (moveIndex === -1) {
                 const emptyCells = tttBoard.reduce((acc, cell, index) => {
                     if (cell === '') acc.push(index);
@@ -2626,10 +2582,8 @@
                 document.getElementById('tttStatus').textContent = 'Giliran Anda';
             }
             
-            // Re-enable player turn
             tttPlayerTurn = true;
             
-            // Re-enable empty cells
             document.querySelectorAll('.ttt-cell').forEach((cell, index) => {
                 if (tttBoard[index] === '') {
                     cell.classList.remove('disabled');
@@ -2699,14 +2653,10 @@
         let food = {};
         let snakeScore = 0;
         let snakeGameInterval;
-        let snakeTouchStartX = 0;
-        let snakeTouchStartY = 0;
         let foodTypes = ['🍎', '🍌', '🍒', '🍇', '🍊'];
         let currentFoodType = '🍎';
         
-        function setupSnakeGame() {
-            // Setup will be done in initSnakeGame
-        }
+        function setupSnakeGame() {}
         
         function initSnakeGame() {
             const snakeContainer = document.getElementById('snakeContainer');
@@ -2726,10 +2676,8 @@
             snakeCanvas = document.getElementById('snakeCanvas');
             snakeCtx = snakeCanvas.getContext('2d');
             
-            // Clear any existing game interval
             clearInterval(snakeGameInterval);
             
-            // Initialize snake
             snake = [
                 {x: 10, y: 10},
                 {x: 9, y: 10},
@@ -2740,25 +2688,17 @@
             snakeScore = 0;
             document.getElementById('snakeScore').textContent = '0';
             
-            // Generate first food
             generateFood();
             
-            // Setup touch controls for mobile
             setupSnakeTouchControls();
-            
-            // Setup button controls
             setupSnakeButtonControls();
             
-            // Start game loop
             snakeGameInterval = setInterval(updateSnakeGame, 100);
             
-            // Draw initial state
             drawSnakeGame();
             
-            // Setup restart button
             document.getElementById('snakeRestart').addEventListener('click', initSnakeGame);
             
-            // Prevent arrow keys from scrolling
             snakeCanvas.setAttribute('tabindex', '0');
             snakeCanvas.focus();
             snakeCanvas.addEventListener('keydown', handleSnakeKeyPress);
@@ -2778,16 +2718,13 @@
                 const deltaX = touch.clientX - snakeTouchStartX;
                 const deltaY = touch.clientY - snakeTouchStartY;
                 
-                // Determine swipe direction
                 if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                    // Horizontal swipe
                     if (deltaX > 0 && snakeDirection !== 'left') {
                         snakeDirection = 'right';
                     } else if (deltaX < 0 && snakeDirection !== 'right') {
                         snakeDirection = 'left';
                     }
                 } else {
-                    // Vertical swipe
                     if (deltaY > 0 && snakeDirection !== 'up') {
                         snakeDirection = 'down';
                     } else if (deltaY < 0 && snakeDirection !== 'down') {
@@ -2802,7 +2739,6 @@
                 btn.addEventListener('click', function() {
                     const direction = this.getAttribute('data-direction');
                     
-                    // Prevent reversing direction
                     if ((direction === 'up' && snakeDirection !== 'down') ||
                         (direction === 'down' && snakeDirection !== 'up') ||
                         (direction === 'left' && snakeDirection !== 'right') ||
@@ -2831,14 +2767,12 @@
                     break;
             }
             
-            // Prevent default scrolling
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
                 e.preventDefault();
             }
         }
         
         function updateSnakeGame() {
-            // Move snake
             const head = {...snake[0]};
             
             switch(snakeDirection) {
@@ -2848,46 +2782,36 @@
                 case 'right': head.x++; break;
             }
             
-            // Check wall collision
             if (head.x < 0 || head.x >= 20 || head.y < 0 || head.y >= 20) {
                 gameOverSnake();
                 return;
             }
             
-            // Check self collision
             if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
                 gameOverSnake();
                 return;
             }
             
-            // Add new head
             snake.unshift(head);
             
-            // Check food collision
             if (head.x === food.x && head.y === food.y) {
                 snakeScore += 10;
                 document.getElementById('snakeScore').textContent = snakeScore;
                 
-                // Update user points
                 updateUserPoints(10);
                 
-                // Generate new food
                 generateFood();
             } else {
-                // Remove tail if no food eaten
                 snake.pop();
             }
             
-            // Draw updated game
             drawSnakeGame();
         }
         
         function drawSnakeGame() {
-            // Clear canvas
             snakeCtx.fillStyle = 'var(--secondary-black)';
             snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
             
-            // Draw grid
             snakeCtx.strokeStyle = 'var(--gray-dark)';
             snakeCtx.lineWidth = 0.5;
             
@@ -2905,20 +2829,16 @@
                 snakeCtx.stroke();
             }
             
-            // Draw snake (all in red)
             snake.forEach((segment, index) => {
-                // Head and body both in red gradient
                 const gradient = snakeCtx.createLinearGradient(
                     segment.x * 20, segment.y * 20,
                     segment.x * 20 + 20, segment.y * 20 + 20
                 );
                 
                 if (index === 0) {
-                    // Head - brighter red
                     gradient.addColorStop(0, '#ff3366');
                     gradient.addColorStop(1, '#ff6699');
                 } else {
-                    // Body - darker red
                     gradient.addColorStop(0, '#cc0044');
                     gradient.addColorStop(1, '#ff3366');
                 }
@@ -2926,7 +2846,6 @@
                 snakeCtx.fillStyle = gradient;
                 snakeCtx.fillRect(segment.x * 20 + 1, segment.y * 20 + 1, 18, 18);
                 
-                // Draw snake eyes on head
                 if (index === 0) {
                     snakeCtx.fillStyle = 'white';
                     
@@ -2958,7 +2877,6 @@
                 }
             });
             
-            // Draw food as fruit emoji
             snakeCtx.font = '16px Arial';
             snakeCtx.textAlign = 'center';
             snakeCtx.textBaseline = 'middle';
@@ -2988,7 +2906,6 @@
             
             showNotification(`Game Over! Skor akhir: ${snakeScore}`);
             
-            // Bonus points for high score
             if (snakeScore > 0) {
                 updateUserPoints(Math.floor(snakeScore / 5));
             }
@@ -2997,23 +2914,29 @@
         // ============== LEADERBOARD SYSTEM ==============
         async function loadLeaderboard() {
             try {
-                // Try to load from JSON file
-                leaderboard = await fetchJSON(LEADERBOARD_JSON_URL);
+                if (USE_BACKEND) {
+                    const result = await apiRequest('get-leaderboard.php');
+                    if (result.success) {
+                        leaderboard = result.data;
+                    } else {
+                        throw new Error('Failed to load from backend');
+                    }
+                } else {
+                    leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
+                }
             } catch (error) {
-                // Fallback to localStorage
+                console.error('Error loading leaderboard:', error);
                 leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
             }
             
+            updateLeaderboardUI();
+        }
+        
+        function updateLeaderboardUI() {
             const leaderboardBody = document.getElementById('leaderboardBody');
             leaderboardBody.innerHTML = '';
             
-            // Sort leaderboard by points (descending)
-            const sortedLeaderboard = [...leaderboard].sort((a, b) => b.points - a.points);
-            
-            // Display top 10
-            const top10 = sortedLeaderboard.slice(0, 10);
-            
-            if (top10.length === 0) {
+            if (leaderboard.length === 0) {
                 const row = document.createElement('tr');
                 const cell = document.createElement('td');
                 cell.colSpan = 4;
@@ -3025,6 +2948,9 @@
                 leaderboardBody.appendChild(row);
                 return;
             }
+            
+            const sortedLeaderboard = [...leaderboard].sort((a, b) => b.points - a.points);
+            const top10 = sortedLeaderboard.slice(0, 10);
             
             top10.forEach((user, index) => {
                 const row = document.createElement('tr');
@@ -3052,19 +2978,33 @@
                 leaderboardBody.appendChild(row);
             });
             
-            // Refresh button
             document.getElementById('refreshLeaderboard').addEventListener('click', loadLeaderboard);
         }
         
         async function updateLeaderboard(pointsToAdd) {
             if (!currentUser) return;
             
-            // Update or add user to leaderboard
+            if (USE_BACKEND) {
+                const result = await apiRequest('save-leaderboard.php', 'POST', {
+                    username: currentUser.username,
+                    points: currentUser.points,
+                    level: currentUser.level
+                });
+                
+                if (!result.success) {
+                    console.warn('Failed to update leaderboard via backend');
+                }
+            }
+            
+            leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
             const existingIndex = leaderboard.findIndex(l => l.username === currentUser.username);
             
             if (existingIndex !== -1) {
-                leaderboard[existingIndex].points = currentUser.points;
-                leaderboard[existingIndex].level = currentUser.level;
+                leaderboard[existingIndex] = {
+                    username: currentUser.username,
+                    points: currentUser.points,
+                    level: currentUser.level
+                };
             } else {
                 leaderboard.push({
                     username: currentUser.username,
@@ -3073,31 +3013,8 @@
                 });
             }
             
-            // Sort leaderboard by points (descending)
             leaderboard.sort((a, b) => b.points - a.points);
-            
-            // Save to JSON file via PHP API
-            try {
-                const formData = new FormData();
-                formData.append('username', currentUser.username);
-                formData.append('points', currentUser.points);
-                formData.append('level', currentUser.level);
-                
-                const response = await fetch(LEADERBOARD_API_URL, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to save leaderboard');
-                }
-                
-                console.log('Leaderboard saved successfully');
-            } catch (error) {
-                console.error('Error saving leaderboard:', error);
-                // Fallback to localStorage
-                localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
-            }
+            localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
         }
 
         // ============== CHAT SYSTEM ==============
@@ -3110,11 +3027,8 @@
                 if (e.key === 'Enter') sendChatMessage();
             });
             
-            // Load existing messages
             await loadChatMessages();
-            
-            // Auto-refresh chat every 5 seconds
-            setInterval(loadChatMessages, 5000);
+            setInterval(loadChatMessages, 3000);
         }
         
         async function sendChatMessage() {
@@ -3128,69 +3042,73 @@
             
             if (!message) return;
             
-            // Create message object
             const messageObj = {
                 user: currentUser.username,
                 message: message,
                 time: new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})
             };
             
-            try {
-                // Send to PHP API
-                const formData = new FormData();
-                formData.append('user', currentUser.username);
-                formData.append('message', message);
-                
-                const response = await fetch(CHAT_API_URL, {
-                    method: 'POST',
-                    body: formData
+            if (USE_BACKEND) {
+                const result = await apiRequest('save-chat.php', 'POST', {
+                    user: currentUser.username,
+                    message: message
                 });
                 
-                if (!response.ok) {
-                    throw new Error('Failed to send message');
+                if (!result.success) {
+                    console.warn('Failed to send chat via backend');
                 }
-                
-                // Clear input
-                chatInput.value = '';
-                
-                // Reload messages
-                await loadChatMessages();
-                
-                // Auto-scroll to bottom
-                const chatMessagesContainer = document.getElementById('chatMessages');
-                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-                
-            } catch (error) {
-                console.error('Error sending chat:', error);
-                showNotification('Gagal mengirim pesan. Coba lagi nanti.');
             }
+            
+            chatMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+            chatMessages.push(messageObj);
+            
+            if (chatMessages.length > 100) {
+                chatMessages = chatMessages.slice(-100);
+            }
+            
+            localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+            
+            chatInput.value = '';
+            await loadChatMessages();
+            
+            const chatMessagesContainer = document.getElementById('chatMessages');
+            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
         }
         
         async function loadChatMessages() {
             try {
-                // Load from JSON file
-                const messages = await fetchJSON(CHAT_JSON_URL);
-                
-                const chatMessagesContainer = document.getElementById('chatMessages');
-                
-                // Clear existing messages except first system message
-                const systemMessage = chatMessagesContainer.querySelector('.chat-message');
-                chatMessagesContainer.innerHTML = '';
-                if (systemMessage) chatMessagesContainer.appendChild(systemMessage);
-                
-                // Display messages
-                messages.forEach(msg => {
-                    displayChatMessage(msg);
-                });
-                
-                // Auto-scroll to bottom
-                setTimeout(() => {
-                    chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-                }, 100);
-                
+                if (USE_BACKEND) {
+                    const result = await apiRequest('get-chat.php');
+                    if (result.success) {
+                        chatMessages = result.data;
+                    } else {
+                        throw new Error('Failed to load from backend');
+                    }
+                } else {
+                    chatMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+                }
             } catch (error) {
                 console.error('Error loading chat:', error);
+                chatMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
             }
+            
+            updateChatUI();
+        }
+        
+        function updateChatUI() {
+            const chatMessagesContainer = document.getElementById('chatMessages');
+            
+            const systemMessage = chatMessagesContainer.querySelector('.chat-message');
+            chatMessagesContainer.innerHTML = '';
+            if (systemMessage) chatMessagesContainer.appendChild(systemMessage);
+            
+            chatMessages.forEach(msg => {
+                displayChatMessage(msg);
+            });
+            
+            setTimeout(() => {
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+            }, 100);
         }
         
         function displayChatMessage(messageObj) {
@@ -3200,7 +3118,7 @@
             messageElement.className = `chat-message ${messageObj.user === currentUser?.username ? 'user' : ''}`;
             
             messageElement.innerHTML = `
-                <strong>${messageObj.user}</strong> <span style="font-size:0.8em;color:#888;">${messageObj.time}</span>
+                <strong>${messageObj.user}</strong> <span style="font-size:0.8em;color:#888;">${messageObj.time || ''}</span>
                 <p style="margin-top:5px;">${messageObj.message}</p>
             `;
             
@@ -3212,10 +3130,8 @@
             const stars = document.querySelectorAll('#userRating .star');
             const submitRatingBtn = document.getElementById('submitRating');
             
-            // Load ratings
             await loadRatings();
             
-            // Initialize selectedRating if user has rated before
             if (currentUser) {
                 const existingRating = ratings.find(r => r.user === currentUser.username);
                 if (existingRating) {
@@ -3224,7 +3140,6 @@
                 }
             }
             
-            // Star rating interaction
             stars.forEach(star => {
                 star.addEventListener('mouseover', function() {
                     const value = parseInt(this.getAttribute('data-value'));
@@ -3239,13 +3154,10 @@
                     const value = parseInt(this.getAttribute('data-value'));
                     selectedRating = value;
                     highlightStars(selectedRating);
-                    
-                    // Show feedback
                     showNotification(`Anda memberikan rating ${selectedRating} bintang`);
                 });
             });
             
-            // Submit rating
             submitRatingBtn.addEventListener('click', submitRating);
         }
         
@@ -3273,7 +3185,6 @@
             
             const comment = document.getElementById('ratingComment').value.trim();
             
-            // Create rating object
             const ratingObj = {
                 user: currentUser.username,
                 rating: selectedRating,
@@ -3282,49 +3193,56 @@
                 timestamp: new Date().toISOString()
             };
             
-            try {
-                // Send to PHP API
-                const formData = new FormData();
-                formData.append('user', currentUser.username);
-                formData.append('rating', selectedRating);
-                formData.append('comment', comment);
-                
-                const response = await fetch(RATING_API_URL, {
-                    method: 'POST',
-                    body: formData
+            if (USE_BACKEND) {
+                const result = await apiRequest('save-rating.php', 'POST', {
+                    user: currentUser.username,
+                    rating: selectedRating,
+                    comment: comment
                 });
                 
-                if (!response.ok) {
-                    throw new Error('Failed to save rating');
+                if (!result.success) {
+                    console.warn('Failed to save rating via backend');
                 }
-                
-                // Clear form
-                document.getElementById('ratingComment').value = '';
-                
-                // Reset selected rating
-                selectedRating = 0;
-                highlightStars(0);
-                
-                // Update rating display
-                await loadRatings();
-                
-                showNotification('Terima kasih atas rating Anda!');
-                
-            } catch (error) {
-                console.error('Error submitting rating:', error);
-                showNotification('Gagal menyimpan rating. Coba lagi nanti.');
             }
+            
+            ratings = JSON.parse(localStorage.getItem('ratings')) || [];
+            
+            const existingIndex = ratings.findIndex(r => r.user === currentUser.username);
+            if (existingIndex !== -1) {
+                ratings[existingIndex] = ratingObj;
+            } else {
+                ratings.push(ratingObj);
+            }
+            
+            localStorage.setItem('ratings', JSON.stringify(ratings));
+            
+            document.getElementById('ratingComment').value = '';
+            selectedRating = 0;
+            highlightStars(0);
+            
+            await loadRatings();
+            showNotification('Terima kasih atas rating Anda!');
         }
         
         async function loadRatings() {
             try {
-                // Load from JSON file
-                ratings = await fetchJSON(RATINGS_JSON_URL);
-                updateRatingStats();
-                loadReviews();
+                if (USE_BACKEND) {
+                    const result = await apiRequest('get-ratings.php');
+                    if (result.success) {
+                        ratings = result.data;
+                    } else {
+                        throw new Error('Failed to load from backend');
+                    }
+                } else {
+                    ratings = JSON.parse(localStorage.getItem('ratings')) || [];
+                }
             } catch (error) {
                 console.error('Error loading ratings:', error);
+                ratings = JSON.parse(localStorage.getItem('ratings')) || [];
             }
+            
+            updateRatingStats();
+            loadReviews();
         }
         
         function updateRatingStats() {
@@ -3332,7 +3250,6 @@
                 document.getElementById('averageRating').textContent = '0.0';
                 document.getElementById('totalRatings').textContent = '0';
                 
-                // Reset stars
                 const starsContainer = document.getElementById('averageStars');
                 starsContainer.innerHTML = '';
                 for (let i = 0; i < 5; i++) {
@@ -3343,15 +3260,12 @@
                 return;
             }
             
-            // Calculate average rating
             const totalRating = ratings.reduce((sum, rating) => sum + rating.rating, 0);
             const averageRating = totalRating / ratings.length;
             
-            // Update display
             document.getElementById('averageRating').textContent = averageRating.toFixed(1);
             document.getElementById('totalRatings').textContent = ratings.length;
             
-            // Update star display
             const starContainer = document.getElementById('averageStars');
             starContainer.innerHTML = '';
             
@@ -3377,7 +3291,6 @@
             const reviewsList = document.getElementById('reviewsList');
             reviewsList.innerHTML = '';
             
-            // Show latest 5 reviews
             const latestReviews = [...ratings]
                 .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
                 .slice(0, 5);
@@ -3391,7 +3304,6 @@
                 const reviewElement = document.createElement('div');
                 reviewElement.className = 'review-item';
                 
-                // Create stars for this review
                 let starsHtml = '';
                 for (let i = 1; i <= 5; i++) {
                     if (i <= review.rating) {
@@ -3418,7 +3330,6 @@
 
         // ============== UTILITY FUNCTIONS ==============
         function showNotification(message) {
-            // Create notification element
             const notification = document.createElement('div');
             notification.textContent = message;
             notification.style.cssText = `
@@ -3438,7 +3349,6 @@
             
             document.body.appendChild(notification);
             
-            // Remove notification after 3 seconds
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.parentNode.removeChild(notification);
@@ -3446,7 +3356,6 @@
             }, 3000);
         }
         
-        // Add CSS animations for notification
         const style = document.createElement('style');
         style.textContent = `
             @keyframes slideIn {
