@@ -1459,52 +1459,53 @@
     <script>
         // ============== GLOBAL VARIABLES ==============
         let currentUser = null;
-        let users = JSON.parse(localStorage.getItem('users')) || [];
-        let leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
-        let chatMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
-        let ratings = JSON.parse(localStorage.getItem('ratings')) || [];
-        let activeUsers = JSON.parse(localStorage.getItem('activeUsers')) || {};
+        let users = [];
+        let leaderboard = [];
+        let chatMessages = [];
+        let ratings = [];
+        let activeUsers = {};
         let currentGame = null;
+        let selectedRating = 0; // Variable untuk menyimpan rating yang dipilih
         
-        // Clean up admin tester jika ada
-        leaderboard = leaderboard.filter(user => user.username !== 'admintester');
-        localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
+        // ============== API ENDPOINTS ==============
+        const API_BASE_URL = window.location.origin; // Gunakan origin yang sama
+        const CHAT_API_URL = `${API_BASE_URL}/save-chat.php`;
+        const RATING_API_URL = `${API_BASE_URL}/save-rating.php`;
+        const LEADERBOARD_API_URL = `${API_BASE_URL}/save-leaderboard.php`;
         
-        // Remove admin tester from users too
-        users = users.filter(user => user.username !== 'admintester');
-        localStorage.setItem('users', JSON.stringify(users));
+        // File JSON URLs
+        const CHAT_JSON_URL = `${API_BASE_URL}/chat.json`;
+        const RATINGS_JSON_URL = `${API_BASE_URL}/ratings.json`;
+        const LEADERBOARD_JSON_URL = `${API_BASE_URL}/leaderboard.json`;
 
         // ============== INITIALIZATION ==============
         document.addEventListener('DOMContentLoaded', function() {
             initializeApp();
             initializeParticles();
             updateActiveUsersCount();
-            
-            // Clean up old data
-            cleanupOldData();
         });
 
-        function initializeApp() {
+        async function initializeApp() {
             // Navigation
             setupNavigation();
             
             // Page Navigation
             setupPageNavigation();
             
-            // Auth System
+            // Auth System (masih pakai localStorage untuk auth)
             setupAuth();
             
             // Games
             setupGames();
             
             // Leaderboard
-            loadLeaderboard();
+            await loadLeaderboard();
             
             // Chat
-            setupChat();
+            await setupChat();
             
             // Rating
-            setupRating();
+            await setupRating();
             
             // Check if user is already logged in
             checkLoginStatus();
@@ -1512,15 +1513,42 @@
             // Update active users periodically
             setInterval(updateActiveUsersCount, 30000); // Every 30 seconds
         }
-        
-        function cleanupOldData() {
-            // Remove test data
-            const testUsers = ['admintester', 'test', 'user123'];
-            users = users.filter(user => !testUsers.includes(user.username));
-            localStorage.setItem('users', JSON.stringify(users));
-            
-            leaderboard = leaderboard.filter(user => !testUsers.includes(user.username));
-            localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
+
+        // ============== HELPER FUNCTIONS ==============
+        async function fetchJSON(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching JSON:', error);
+                return [];
+            }
+        }
+
+        async function saveToJSON(data, endpoint) {
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to save data');
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Error saving data:', error);
+                // Fallback: Simpan ke localStorage jika API gagal
+                localStorage.setItem(endpoint.split('/').pop(), JSON.stringify(data));
+                return { success: false, message: 'Using localStorage fallback' };
+            }
         }
 
         // ============== PARTICLES BACKGROUND ==============
@@ -1674,9 +1702,6 @@
                 }
             });
             
-            // Save to localStorage
-            localStorage.setItem('activeUsers', JSON.stringify(activeUsers));
-            
             // Update display count
             const activeCount = Object.keys(activeUsers).length;
             document.getElementById('activeUsersCount').textContent = activeCount;
@@ -1736,6 +1761,9 @@
                 return;
             }
             
+            // Load users from localStorage
+            users = JSON.parse(localStorage.getItem('users')) || [];
+            
             const user = users.find(u => u.username === username && u.password === password);
             
             if (user) {
@@ -1766,6 +1794,9 @@
                 return;
             }
             
+            // Load users from localStorage
+            users = JSON.parse(localStorage.getItem('users')) || [];
+            
             if (users.find(u => u.username === username)) {
                 showNotification('Username sudah digunakan');
                 return;
@@ -1782,17 +1813,6 @@
             
             users.push(newUser);
             localStorage.setItem('users', JSON.stringify(users));
-            
-            // Add to leaderboard
-            leaderboard.push({
-                username: username,
-                points: 0,
-                level: 1
-            });
-            
-            // Sort leaderboard by points
-            leaderboard.sort((a, b) => b.points - a.points);
-            localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
             
             currentUser = newUser;
             localStorage.setItem('currentUser', JSON.stringify(newUser));
@@ -1968,40 +1988,27 @@
             if (window.snakeGameInterval) clearInterval(window.snakeGameInterval);
         }
         
-        function updateUserPoints(pointsToAdd) {
+        async function updateUserPoints(pointsToAdd) {
             if (!currentUser) return;
             
             // Update current user points
             currentUser.points = (currentUser.points || 0) + pointsToAdd;
             currentUser.level = Math.floor(currentUser.points / 100) + 1;
             
-            // Update in users array
+            // Update in users array (localStorage)
+            users = JSON.parse(localStorage.getItem('users')) || [];
             const userIndex = users.findIndex(u => u.username === currentUser.username);
             if (userIndex !== -1) {
                 users[userIndex] = currentUser;
                 localStorage.setItem('users', JSON.stringify(users));
             }
             
-            // Update leaderboard
-            const leaderIndex = leaderboard.findIndex(l => l.username === currentUser.username);
-            if (leaderIndex !== -1) {
-                leaderboard[leaderIndex].points = currentUser.points;
-                leaderboard[leaderIndex].level = currentUser.level;
-            } else {
-                leaderboard.push({
-                    username: currentUser.username,
-                    points: currentUser.points,
-                    level: currentUser.level
-                });
-            }
-            
-            // Sort leaderboard by points (descending)
-            leaderboard.sort((a, b) => b.points - a.points);
-            localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
+            // Update leaderboard (JSON file)
+            await updateLeaderboard(pointsToAdd);
             
             // Update UI
             document.getElementById('currentPoints').textContent = currentUser.points;
-            loadLeaderboard();
+            await loadLeaderboard();
             
             showNotification(`+${pointsToAdd} poin! Total: ${currentUser.points} poin`);
         }
@@ -2248,201 +2255,6 @@
                 question: "Siapa penulis novel 'Laskar Pelangi'?",
                 options: ["Tere Liye", "Andrea Hirata", "Dee Lestari", "Pramoedya Ananta Toer"],
                 answer: 1
-            },
-            {
-                question: "Berapa jumlah kaki yang dimiliki laba-laba?",
-                options: ["6", "8", "10", "12"],
-                answer: 1
-            },
-            {
-                question: "Apa nama gunung tertinggi di dunia?",
-                options: ["Kilimanjaro", "Everest", "Fuji", "Denali"],
-                answer: 1
-            },
-            {
-                question: "Siapa penulis naskah proklamasi Indonesia?",
-                options: ["Soekarno", "Mohammad Hatta", "Ahmad Soebardjo", "Sayuti Melik"],
-                answer: 0
-            },
-            {
-                question: "Apa nama buah yang menjadi bahan utama selai kacang?",
-                options: ["Kacang tanah", "Kacang hijau", "Kacang merah", "Kacang kedelai"],
-                answer: 0
-            },
-            {
-                question: "Berapakah hasil dari 15²?",
-                options: ["225", "250", "275", "300"],
-                answer: 0
-            },
-            {
-                question: "Apa nama planet terbesar di tata surya?",
-                options: ["Saturnus", "Jupiter", "Neptunus", "Uranus"],
-                answer: 1
-            },
-            {
-                question: "Siapa pelukis Mona Lisa?",
-                options: ["Vincent van Gogh", "Leonardo da Vinci", "Pablo Picasso", "Michelangelo"],
-                answer: 1
-            },
-            {
-                question: "Apa nama ibukota Jepang?",
-                options: ["Seoul", "Beijing", "Tokyo", "Bangkok"],
-                answer: 2
-            },
-            {
-                question: "Berapakah hasil dari ¼ + ½?",
-                options: ["¾", "½", "¼", "1"],
-                answer: 0
-            },
-            {
-                question: "Apa nama samudra terbesar di dunia?",
-                options: ["Samudra Atlantik", "Samudra Hindia", "Samudra Pasifik", "Samudra Arktik"],
-                answer: 2
-            },
-            {
-                question: "Siapa ilmuwan yang menemukan hukum gravitasi?",
-                options: ["Albert Einstein", "Isaac Newton", "Galileo Galilei", "Nikola Tesla"],
-                answer: 1
-            },
-            {
-                question: "Apa nama warna yang dihasilkan dari pencampuran kuning dan biru?",
-                options: ["Ungu", "Oranye", "Hijau", "Coklat"],
-                answer: 2
-            },
-            {
-                question: "Berapakah jumlah hari dalam tahun kabisat?",
-                options: ["365", "366", "364", "367"],
-                answer: 1
-            },
-            {
-                question: "Apa nama hewan yang menjadi simbol kebijaksanaan?",
-                options: ["Burung hantu", "Singa", "Gajah", "Merpati"],
-                answer: 0
-            },
-            {
-                question: "Siapa pencipta karakter Sherlock Holmes?",
-                options: ["Agatha Christie", "Arthur Conan Doyle", "J.K. Rowling", "Stephen King"],
-                answer: 1
-            },
-            {
-                question: "Apa nama makanan tradisional Indonesia dari kedelai?",
-                options: ["Tahu", "Tempe", "Kecap", "Tauco"],
-                answer: 1
-            },
-            {
-                question: "Berapakah jumlah pemain dalam satu tim sepak bola?",
-                options: ["10", "11", "12", "13"],
-                answer: 1
-            },
-            {
-                question: "Apa nama benua terbesar di dunia?",
-                options: ["Amerika", "Afrika", "Eropa", "Asia"],
-                answer: 3
-            },
-            {
-                question: "Siapa penemu telepon?",
-                options: ["Thomas Edison", "Alexander Graham Bell", "Nikola Tesla", "Guglielmo Marconi"],
-                answer: 1
-            },
-            {
-                question: "Apa nama buah yang kulitnya berwarna ungu dan dagingnya hijau?",
-                options: ["Alpukat", "Anggur", "Jambu", "Mangga"],
-                answer: 0
-            },
-            {
-                question: "Berapakah hasil dari 3⁴?",
-                options: ["64", "81", "100", "121"],
-                answer: 1
-            },
-            {
-                question: "Apa nama ibukota Australia?",
-                options: ["Sydney", "Melbourne", "Canberra", "Perth"],
-                answer: 2
-            },
-            {
-                question: "Siapa ilmuwan yang menemukan radioaktivitas?",
-                options: ["Marie Curie", "Albert Einstein", "Niels Bohr", "Ernest Rutherford"],
-                answer: 0
-            },
-            {
-                question: "Apa nama alat musik tradisional Jawa?",
-                options: ["Gitar", "Gamelan", "Angklung", "Suling"],
-                answer: 1
-            },
-            {
-                question: "Berapakah jumlah sisi pada segi enam?",
-                options: ["4", "5", "6", "7"],
-                answer: 2
-            },
-            {
-                question: "Apa nama danau terdalam di dunia?",
-                options: ["Danau Toba", "Danau Baikal", "Danau Victoria", "Danau Superior"],
-                answer: 1
-            },
-            {
-                question: "Siapa pencipta Microsoft?",
-                options: ["Steve Jobs", "Bill Gates", "Mark Zuckerberg", "Larry Page"],
-                answer: 1
-            },
-            {
-                question: "Apa nama minuman tradisional Indonesia dari kelapa?",
-                options: ["Es Teh", "Es Jeruk", "Es Kelapa", "Es Dawet"],
-                answer: 2
-            },
-            {
-                question: "Berapakah jumlah tulang rusuk manusia?",
-                options: ["12 pasang", "13 pasang", "14 pasang", "15 pasang"],
-                answer: 0
-            },
-            {
-                question: "Apa nama planet dengan cincin yang paling terkenal?",
-                options: ["Jupiter", "Saturnus", "Uranus", "Neptunus"],
-                answer: 1
-            },
-            {
-                question: "Siapa penulis novel 'Harry Potter'?",
-                options: ["J.R.R. Tolkien", "J.K. Rowling", "George R.R. Martin", "Stephenie Meyer"],
-                answer: 1
-            },
-            {
-                question: "Apa nama sungai terpanjang di dunia?",
-                options: ["Sungai Amazon", "Sungai Nil", "Sungai Yangtze", "Sungai Mississippi"],
-                answer: 1
-            },
-            {
-                question: "Berapakah hasil dari √144?",
-                options: ["10", "11", "12", "13"],
-                answer: 2
-            },
-            {
-                question: "Apa nama negara dengan populasi terbanyak di dunia?",
-                options: ["India", "Amerika Serikat", "Indonesia", "China"],
-                answer: 3
-            },
-            {
-                question: "Siapa pelukis 'The Starry Night'?",
-                options: ["Vincent van Gogh", "Claude Monet", "Salvador Dali", "Rembrandt"],
-                answer: 0
-            },
-            {
-                question: "Apa nama makanan Italia berbentuk bulat dengan topping?",
-                options: ["Pasta", "Risotto", "Pizza", "Lasagna"],
-                answer: 2
-            },
-            {
-                question: "Berapakah jumlah warna dalam pelangi?",
-                options: ["5", "6", "7", "8"],
-                answer: 2
-            },
-            {
-                question: "Apa nama alat untuk mengukur suhu?",
-                options: ["Barometer", "Termometer", "Hygrometer", "Speedometer"],
-                answer: 1
-            },
-            {
-                question: "Siapa penemu bola lampu pijar?",
-                options: ["Thomas Edison", "Nikola Tesla", "Alexander Graham Bell", "Michael Faraday"],
-                answer: 0
             }
         ];
         
@@ -2456,23 +2268,14 @@
         function loadQuizQuestion() {
             const quizContainer = document.getElementById('quizContainer');
             
-            // Shuffle questions and take 10 random questions
-            if (currentQuizQuestionIndex === 0) {
-                // Shuffle the entire array
-                for (let i = quizQuestions.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [quizQuestions[i], quizQuestions[j]] = [quizQuestions[j], quizQuestions[i]];
-                }
-            }
-            
-            if (currentQuizQuestionIndex >= 10) {
+            if (currentQuizQuestionIndex >= quizQuestions.length) {
                 // Quiz completed
                 quizContainer.innerHTML = `
                     <div class="quiz-container">
                         <div class="quiz-question">Kuis selesai!</div>
                         <div id="quizResult">
                             <p style="text-align: center; font-size: 1.2rem; padding: 20px; background-color: var(--secondary-black); border-radius: 10px;">
-                                Skor akhir Anda: ${quizScore}/10<br>
+                                Skor akhir Anda: ${quizScore}/${quizQuestions.length}<br>
                                 Poin yang didapat: ${quizScore * 10}
                             </p>
                         </div>
@@ -2502,7 +2305,7 @@
             
             quizContainer.innerHTML = `
                 <div class="quiz-container">
-                    <div class="quiz-question">Pertanyaan ${currentQuizQuestionIndex + 1}/10: ${question.question}</div>
+                    <div class="quiz-question">Pertanyaan ${currentQuizQuestionIndex + 1}: ${question.question}</div>
                     <div class="quiz-options" id="quizOptions"></div>
                     <div id="quizResult"></div>
                 </div>
@@ -3191,8 +2994,16 @@
             }
         }
 
-        // ============== LEADERBOARD ==============
-        function loadLeaderboard() {
+        // ============== LEADERBOARD SYSTEM ==============
+        async function loadLeaderboard() {
+            try {
+                // Try to load from JSON file
+                leaderboard = await fetchJSON(LEADERBOARD_JSON_URL);
+            } catch (error) {
+                // Fallback to localStorage
+                leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
+            }
+            
             const leaderboardBody = document.getElementById('leaderboardBody');
             leaderboardBody.innerHTML = '';
             
@@ -3244,9 +3055,53 @@
             // Refresh button
             document.getElementById('refreshLeaderboard').addEventListener('click', loadLeaderboard);
         }
+        
+        async function updateLeaderboard(pointsToAdd) {
+            if (!currentUser) return;
+            
+            // Update or add user to leaderboard
+            const existingIndex = leaderboard.findIndex(l => l.username === currentUser.username);
+            
+            if (existingIndex !== -1) {
+                leaderboard[existingIndex].points = currentUser.points;
+                leaderboard[existingIndex].level = currentUser.level;
+            } else {
+                leaderboard.push({
+                    username: currentUser.username,
+                    points: currentUser.points,
+                    level: currentUser.level
+                });
+            }
+            
+            // Sort leaderboard by points (descending)
+            leaderboard.sort((a, b) => b.points - a.points);
+            
+            // Save to JSON file via PHP API
+            try {
+                const formData = new FormData();
+                formData.append('username', currentUser.username);
+                formData.append('points', currentUser.points);
+                formData.append('level', currentUser.level);
+                
+                const response = await fetch(LEADERBOARD_API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to save leaderboard');
+                }
+                
+                console.log('Leaderboard saved successfully');
+            } catch (error) {
+                console.error('Error saving leaderboard:', error);
+                // Fallback to localStorage
+                localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
+            }
+        }
 
         // ============== CHAT SYSTEM ==============
-        function setupChat() {
+        async function setupChat() {
             const chatSendBtn = document.getElementById('chatSend');
             const chatInput = document.getElementById('chatInput');
             
@@ -3256,10 +3111,13 @@
             });
             
             // Load existing messages
-            loadChatMessages();
+            await loadChatMessages();
+            
+            // Auto-refresh chat every 5 seconds
+            setInterval(loadChatMessages, 5000);
         }
         
-        function sendChatMessage() {
+        async function sendChatMessage() {
             if (!currentUser) {
                 showNotification('Harap masuk terlebih dahulu untuk mengirim pesan');
                 return;
@@ -3272,62 +3130,77 @@
             
             // Create message object
             const messageObj = {
-                id: Date.now(),
-                username: currentUser.username,
+                user: currentUser.username,
                 message: message,
-                timestamp: new Date().toISOString(),
                 time: new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})
             };
             
-            // Add to messages array
-            chatMessages.push(messageObj);
-            
-            // Keep only last 100 messages
-            if (chatMessages.length > 100) {
-                chatMessages = chatMessages.slice(-100);
+            try {
+                // Send to PHP API
+                const formData = new FormData();
+                formData.append('user', currentUser.username);
+                formData.append('message', message);
+                
+                const response = await fetch(CHAT_API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to send message');
+                }
+                
+                // Clear input
+                chatInput.value = '';
+                
+                // Reload messages
+                await loadChatMessages();
+                
+                // Auto-scroll to bottom
+                const chatMessagesContainer = document.getElementById('chatMessages');
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                
+            } catch (error) {
+                console.error('Error sending chat:', error);
+                showNotification('Gagal mengirim pesan. Coba lagi nanti.');
             }
-            
-            localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
-            
-            // Clear input
-            chatInput.value = '';
-            
-            // Display message
-            displayChatMessage(messageObj);
-            
-            // Auto-scroll to bottom
-            const chatMessagesContainer = document.getElementById('chatMessages');
-            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
         }
         
-        function loadChatMessages() {
-            const chatMessagesContainer = document.getElementById('chatMessages');
-            
-            // Clear existing messages except first system message
-            const systemMessage = chatMessagesContainer.querySelector('.chat-message');
-            chatMessagesContainer.innerHTML = '';
-            if (systemMessage) chatMessagesContainer.appendChild(systemMessage);
-            
-            // Load messages from storage
-            chatMessages.forEach(msg => {
-                displayChatMessage(msg);
-            });
-            
-            // Auto-scroll to bottom
-            setTimeout(() => {
-                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-            }, 100);
+        async function loadChatMessages() {
+            try {
+                // Load from JSON file
+                const messages = await fetchJSON(CHAT_JSON_URL);
+                
+                const chatMessagesContainer = document.getElementById('chatMessages');
+                
+                // Clear existing messages except first system message
+                const systemMessage = chatMessagesContainer.querySelector('.chat-message');
+                chatMessagesContainer.innerHTML = '';
+                if (systemMessage) chatMessagesContainer.appendChild(systemMessage);
+                
+                // Display messages
+                messages.forEach(msg => {
+                    displayChatMessage(msg);
+                });
+                
+                // Auto-scroll to bottom
+                setTimeout(() => {
+                    chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                }, 100);
+                
+            } catch (error) {
+                console.error('Error loading chat:', error);
+            }
         }
         
         function displayChatMessage(messageObj) {
             const chatMessagesContainer = document.getElementById('chatMessages');
             
             const messageElement = document.createElement('div');
-            messageElement.className = `chat-message ${messageObj.username === currentUser?.username ? 'user' : ''}`;
+            messageElement.className = `chat-message ${messageObj.user === currentUser?.username ? 'user' : ''}`;
             
-            const time = new Date(messageObj.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
             messageElement.innerHTML = `
-                <strong>${messageObj.username}</strong> <span style="font-size:0.8em;color:#888;">${time}</span>
+                <strong>${messageObj.user}</strong> <span style="font-size:0.8em;color:#888;">${messageObj.time}</span>
                 <p style="margin-top:5px;">${messageObj.message}</p>
             `;
             
@@ -3335,10 +3208,21 @@
         }
 
         // ============== RATING SYSTEM ==============
-        function setupRating() {
+        async function setupRating() {
             const stars = document.querySelectorAll('#userRating .star');
             const submitRatingBtn = document.getElementById('submitRating');
-            let selectedRating = 0;
+            
+            // Load ratings
+            await loadRatings();
+            
+            // Initialize selectedRating if user has rated before
+            if (currentUser) {
+                const existingRating = ratings.find(r => r.user === currentUser.username);
+                if (existingRating) {
+                    selectedRating = existingRating.rating;
+                    highlightStars(selectedRating);
+                }
+            }
             
             // Star rating interaction
             stars.forEach(star => {
@@ -3352,16 +3236,17 @@
                 });
                 
                 star.addEventListener('click', function() {
-                    selectedRating = parseInt(this.getAttribute('data-value'));
+                    const value = parseInt(this.getAttribute('data-value'));
+                    selectedRating = value;
                     highlightStars(selectedRating);
+                    
+                    // Show feedback
+                    showNotification(`Anda memberikan rating ${selectedRating} bintang`);
                 });
             });
             
             // Submit rating
             submitRatingBtn.addEventListener('click', submitRating);
-            
-            // Load existing ratings
-            loadRatings();
         }
         
         function highlightStars(count) {
@@ -3375,19 +3260,11 @@
             });
         }
         
-        function submitRating() {
+        async function submitRating() {
             if (!currentUser) {
                 showNotification('Harap masuk terlebih dahulu untuk memberikan rating');
                 return;
             }
-            
-            const stars = document.querySelectorAll('#userRating .star');
-            let selectedRating = 0;
-            stars.forEach((star, index) => {
-                if (star.classList.contains('active')) {
-                    selectedRating = index + 1;
-                }
-            });
             
             if (selectedRating === 0) {
                 showNotification('Harap pilih rating bintang terlebih dahulu');
@@ -3396,45 +3273,58 @@
             
             const comment = document.getElementById('ratingComment').value.trim();
             
-            // Check if user already rated
-            const existingRatingIndex = ratings.findIndex(r => r.username === currentUser.username);
+            // Create rating object
+            const ratingObj = {
+                user: currentUser.username,
+                rating: selectedRating,
+                comment: comment,
+                date: new Date().toLocaleDateString('id-ID'),
+                timestamp: new Date().toISOString()
+            };
             
-            if (existingRatingIndex !== -1) {
-                // Update existing rating
-                ratings[existingRatingIndex] = {
-                    ...ratings[existingRatingIndex],
-                    rating: selectedRating,
-                    comment: comment,
-                    timestamp: new Date().toISOString()
-                };
-                showNotification('Rating Anda telah diperbarui!');
-            } else {
-                // Create new rating object
-                const ratingObj = {
-                    id: Date.now(),
-                    username: currentUser.username,
-                    rating: selectedRating,
-                    comment: comment,
-                    timestamp: new Date().toISOString(),
-                    date: new Date().toLocaleDateString('id-ID')
-                };
+            try {
+                // Send to PHP API
+                const formData = new FormData();
+                formData.append('user', currentUser.username);
+                formData.append('rating', selectedRating);
+                formData.append('comment', comment);
                 
-                // Add to ratings array
-                ratings.push(ratingObj);
+                const response = await fetch(RATING_API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to save rating');
+                }
+                
+                // Clear form
+                document.getElementById('ratingComment').value = '';
+                
+                // Reset selected rating
+                selectedRating = 0;
+                highlightStars(0);
+                
+                // Update rating display
+                await loadRatings();
+                
                 showNotification('Terima kasih atas rating Anda!');
+                
+            } catch (error) {
+                console.error('Error submitting rating:', error);
+                showNotification('Gagal menyimpan rating. Coba lagi nanti.');
             }
-            
-            localStorage.setItem('ratings', JSON.stringify(ratings));
-            
-            // Clear form
-            document.querySelectorAll('#userRating .star').forEach(star => {
-                star.classList.remove('active');
-            });
-            document.getElementById('ratingComment').value = '';
-            
-            // Update rating display
-            updateRatingStats();
-            loadReviews();
+        }
+        
+        async function loadRatings() {
+            try {
+                // Load from JSON file
+                ratings = await fetchJSON(RATINGS_JSON_URL);
+                updateRatingStats();
+                loadReviews();
+            } catch (error) {
+                console.error('Error loading ratings:', error);
+            }
         }
         
         function updateRatingStats() {
@@ -3514,7 +3404,7 @@
                 reviewElement.innerHTML = `
                     <div class="review-header">
                         <div>
-                            <strong>${review.username}</strong>
+                            <strong>${review.user}</strong>
                             <div style="margin-top: 5px;">${starsHtml}</div>
                         </div>
                         <span style="font-size:0.8em;color:var(--gray-medium);">${review.date}</span>
@@ -3524,11 +3414,6 @@
                 
                 reviewsList.appendChild(reviewElement);
             });
-        }
-        
-        function loadRatings() {
-            updateRatingStats();
-            loadReviews();
         }
 
         // ============== UTILITY FUNCTIONS ==============
