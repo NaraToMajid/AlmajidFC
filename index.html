@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Particles.js -->
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary-black: #0a0a0a;
@@ -1457,20 +1459,21 @@
     </footer>
 
     <script>
+        // ============== SUPABASE CONFIGURATION ==============
+        const SUPABASE_URL = 'https://bxhrnnwfqlsoviysqcdw.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4aHJubndmcWxzb3ZpeXNxY2R3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODkzNDIsImV4cCI6MjA4MTM2NTM0Mn0.O7fpv0TrDd-8ZE3Z9B5zWyAuWROPis5GRnKMxmqncX8';
+        
+        // Inisialisasi Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
         // ============== GLOBAL VARIABLES ==============
         let currentUser = null;
-        let users = [];
         let leaderboard = [];
         let chatMessages = [];
         let ratings = [];
-        let activeUsers = {};
         let currentGame = null;
         let selectedRating = 0;
         let currentSessionId = null;
-        
-        // ============== BACKEND CONFIGURATION ==============
-        const USE_BACKEND = true; // SELALU TRUE UNTUK ONLINE
-        const BACKEND_URL = window.location.origin; // Gunakan origin yang sama
         
         // ============== INITIALIZATION ==============
         document.addEventListener('DOMContentLoaded', function() {
@@ -1496,18 +1499,24 @@
             // Games
             setupGames();
             
-            // Load initial data
-            await loadInitialData();
+            // Chat System
+            setupChat();
+            
+            // Rating System
+            setupRating();
             
             // Check if user is already logged in
             checkLoginStatus();
             
+            // Load initial data
+            await loadInitialData();
+            
             // Update active users periodically
             setInterval(updateActiveUsersCount, 10000); // Every 10 seconds
-            setInterval(() => {
-                loadLeaderboard();
-                loadChatMessages();
-                loadRatings();
+            setInterval(async () => {
+                await loadLeaderboard();
+                await loadChatMessages();
+                await loadRatings();
             }, 5000); // Refresh data every 5 seconds
         }
 
@@ -1522,38 +1531,6 @@
             } catch (error) {
                 console.error('Error loading initial data:', error);
                 showNotification('Gagal memuat data. Coba refresh halaman.');
-            }
-        }
-
-        // ============== API FUNCTIONS ==============
-        async function apiRequest(endpoint, method = 'GET', data = null) {
-            if (!USE_BACKEND) {
-                console.error('Backend should be enabled!');
-                return { success: false, message: 'Backend disabled' };
-            }
-            
-            const url = `${BACKEND_URL}/${endpoint}`;
-            const options = {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            };
-            
-            if (data && (method === 'POST' || method === 'PUT')) {
-                options.body = JSON.stringify(data);
-            }
-            
-            try {
-                const response = await fetch(url, options);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                const result = await response.json();
-                return result;
-            } catch (error) {
-                console.error(`API request failed (${endpoint}):`, error);
-                return { success: false, error: error.message };
             }
         }
 
@@ -1689,23 +1666,39 @@
             const username = currentUser ? currentUser.username : 'guest_' + currentSessionId.substr(0, 8);
             
             try {
-                // Update active user di server
-                const result = await apiRequest('update-active-user.php', 'POST', {
-                    sessionId: currentSessionId,
-                    username: username,
-                    timestamp: Date.now()
-                });
+                // Update active user di Supabase
+                const now = new Date();
+                const { error } = await supabase
+                    .from('active-users')
+                    .upsert({
+                        session_id: currentSessionId,
+                        username: username,
+                        last_active: now.toISOString(),
+                        updated_at: now.toISOString()
+                    }, {
+                        onConflict: 'session_id'
+                    });
                 
-                if (result.success && result.data && result.data.activeUsers) {
-                    const activeCount = result.data.activeUsers;
-                    document.getElementById('activeUsersCount').textContent = activeCount;
-                    return activeCount;
-                }
+                if (error) throw error;
+                
+                // Get count of active users (users active in last 5 minutes)
+                const fiveMinutesAgo = new Date(now.getTime() - 5 * 60000);
+                
+                const { count, error: countError } = await supabase
+                    .from('active-users')
+                    .select('*', { count: 'exact', head: true })
+                    .gte('last_active', fiveMinutesAgo.toISOString());
+                
+                if (countError) throw countError;
+                
+                const activeCount = count || 1;
+                document.getElementById('activeUsersCount').textContent = activeCount;
+                return activeCount;
             } catch (error) {
                 console.error('Error updating active users:', error);
+                document.getElementById('activeUsersCount').textContent = '1';
+                return 1;
             }
-            
-            return 1;
         }
         
         function generateSessionId() {
@@ -1759,23 +1752,48 @@
                 return;
             }
             
-            const result = await apiRequest('auth.php', 'POST', {
-                action: 'login',
-                username: username,
-                password: password
-            });
-            
-            if (result.success) {
-                currentUser = result.data;
+            try {
+                // Cari user di Supabase
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('username', username)
+                    .single();
+                
+                if (error) {
+                    if (error.code === 'PGRST116') { // No rows returned
+                        showNotification('Username tidak ditemukan');
+                    } else {
+                        throw error;
+                    }
+                    return;
+                }
+                
+                // Verifikasi password (sederhana - dalam produksi gunakan hashing)
+                if (data.password !== password) {
+                    showNotification('Password salah');
+                    return;
+                }
+                
+                currentUser = {
+                    id: data.id,
+                    username: data.username,
+                    points: data.points || 0,
+                    level: data.level || 1,
+                    created_at: data.created_at
+                };
+                
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
                 updateUIAfterLogin();
                 showNotification(`Selamat datang, ${username}!`);
-                updateActiveUsersCount();
+                await updateActiveUsersCount();
                 
                 // Update leaderboard untuk user ini
                 await updateLeaderboard(currentUser.points || 0);
-            } else {
-                showNotification(result.message || 'Login gagal');
+                
+            } catch (error) {
+                console.error('Error logging in:', error);
+                showNotification('Login gagal: ' + error.message);
             }
         }
         
@@ -1804,24 +1822,61 @@
                 return;
             }
             
-            const result = await apiRequest('auth.php', 'POST', {
-                action: 'register',
-                username: username,
-                password: password
-            });
-            
-            if (result.success) {
-                currentUser = result.data;
+            try {
+                // Cek apakah username sudah ada
+                const { data: existingUser, error: checkError } = await supabase
+                    .from('users')
+                    .select('username')
+                    .eq('username', username)
+                    .single();
+                
+                if (existingUser) {
+                    showNotification('Username sudah digunakan');
+                    return;
+                }
+                
+                if (checkError && checkError.code !== 'PGRST116') {
+                    throw checkError;
+                }
+                
+                // Buat user baru
+                const now = new Date();
+                const { data, error } = await supabase
+                    .from('users')
+                    .insert([
+                        {
+                            username: username,
+                            password: password, // Dalam produksi, gunakan hashing!
+                            points: 0,
+                            level: 1,
+                            created_at: now.toISOString()
+                        }
+                    ])
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                currentUser = {
+                    id: data.id,
+                    username: data.username,
+                    points: data.points,
+                    level: data.level,
+                    created_at: data.created_at
+                };
+                
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
                 updateUIAfterLogin();
                 showNotification(`Akun berhasil dibuat! Selamat datang, ${username}!`);
-                updateActiveUsersCount();
+                await updateActiveUsersCount();
                 document.getElementById('showLogin').click();
                 
                 // Tambah user ke leaderboard
                 await updateLeaderboard(0);
-            } else {
-                showNotification(result.message || 'Registrasi gagal');
+                
+            } catch (error) {
+                console.error('Error registering:', error);
+                showNotification('Registrasi gagal: ' + error.message);
             }
         }
         
@@ -1830,6 +1885,10 @@
             localStorage.removeItem('currentUser');
             checkLoginStatus();
             showNotification('Anda telah keluar');
+            
+            // Disable chat
+            document.getElementById('chatInput').disabled = true;
+            document.getElementById('chatSend').disabled = true;
         }
         
         function updateUIAfterLogin() {
@@ -1984,7 +2043,7 @@
             
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             
-            // Update points di server
+            // Update points di Supabase
             await updateLeaderboard(currentUser.points);
             
             document.getElementById('currentPoints').textContent = currentUser.points;
@@ -2889,13 +2948,16 @@
         // ============== LEADERBOARD SYSTEM ==============
         async function loadLeaderboard() {
             try {
-                const result = await apiRequest('get-leaderboard.php');
-                if (result.success) {
-                    leaderboard = result.data || [];
-                    updateLeaderboardUI();
-                } else {
-                    throw new Error('Failed to load leaderboard');
-                }
+                const { data, error } = await supabase
+                    .from('leaderboard')
+                    .select('*')
+                    .order('points', { ascending: false })
+                    .limit(10);
+                
+                if (error) throw error;
+                
+                leaderboard = data || [];
+                updateLeaderboardUI();
             } catch (error) {
                 console.error('Error loading leaderboard:', error);
                 showNotification('Gagal memuat leaderboard');
@@ -2919,10 +2981,7 @@
                 return;
             }
             
-            const sortedLeaderboard = [...leaderboard].sort((a, b) => b.points - a.points);
-            const top10 = sortedLeaderboard.slice(0, 10);
-            
-            top10.forEach((user, index) => {
+            leaderboard.forEach((user, index) => {
                 const row = document.createElement('tr');
                 
                 const rankCell = document.createElement('td');
@@ -2955,15 +3014,29 @@
             if (!currentUser) return;
             
             try {
-                const result = await apiRequest('save-leaderboard.php', 'POST', {
-                    username: currentUser.username,
-                    points: points,
-                    level: currentUser.level || 1
-                });
+                const now = new Date();
+                const { error } = await supabase
+                    .from('leaderboard')
+                    .upsert({
+                        username: currentUser.username,
+                        points: points,
+                        level: currentUser.level || 1,
+                        updated_at: now.toISOString()
+                    }, {
+                        onConflict: 'username'
+                    });
                 
-                if (!result.success) {
-                    console.warn('Failed to update leaderboard:', result.message);
-                }
+                if (error) throw error;
+                
+                // Update user table juga
+                await supabase
+                    .from('users')
+                    .update({
+                        points: points,
+                        level: currentUser.level || 1
+                    })
+                    .eq('username', currentUser.username);
+                
             } catch (error) {
                 console.error('Error updating leaderboard:', error);
             }
@@ -3003,20 +3076,25 @@
             }
             
             try {
-                const result = await apiRequest('save-chat.php', 'POST', {
-                    user: currentUser.username,
-                    message: message
-                });
+                const now = new Date();
+                const { error } = await supabase
+                    .from('chat')
+                    .insert([
+                        {
+                            user: currentUser.username,
+                            message: message,
+                            created_at: now.toISOString()
+                        }
+                    ]);
                 
-                if (result.success) {
-                    chatInput.value = '';
-                    await loadChatMessages();
-                    
-                    const chatMessagesContainer = document.getElementById('chatMessages');
-                    chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-                } else {
-                    showNotification('Gagal mengirim pesan: ' + (result.message || 'Unknown error'));
-                }
+                if (error) throw error;
+                
+                chatInput.value = '';
+                await loadChatMessages();
+                
+                const chatMessagesContainer = document.getElementById('chatMessages');
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                
             } catch (error) {
                 console.error('Error sending chat:', error);
                 showNotification('Gagal mengirim pesan');
@@ -3025,13 +3103,16 @@
         
         async function loadChatMessages() {
             try {
-                const result = await apiRequest('get-chat.php');
-                if (result.success) {
-                    chatMessages = result.data || [];
-                    updateChatUI();
-                } else {
-                    throw new Error('Failed to load chat');
-                }
+                const { data, error } = await supabase
+                    .from('chat')
+                    .select('*')
+                    .order('created_at', { ascending: true })
+                    .limit(50);
+                
+                if (error) throw error;
+                
+                chatMessages = data || [];
+                updateChatUI();
             } catch (error) {
                 console.error('Error loading chat:', error);
             }
@@ -3059,8 +3140,11 @@
             const messageElement = document.createElement('div');
             messageElement.className = `chat-message ${messageObj.user === currentUser?.username ? 'user' : ''}`;
             
+            const time = new Date(messageObj.created_at);
+            const timeString = time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            
             messageElement.innerHTML = `
-                <strong>${messageObj.user}</strong> <span style="font-size:0.8em;color:#888;">${messageObj.time || ''}</span>
+                <strong>${messageObj.user}</strong> <span style="font-size:0.8em;color:#888;">${timeString}</span>
                 <p style="margin-top:5px;">${messageObj.message}</p>
             `;
             
@@ -3128,21 +3212,28 @@
             const comment = document.getElementById('ratingComment').value.trim();
             
             try {
-                const result = await apiRequest('save-rating.php', 'POST', {
-                    user: currentUser.username,
-                    rating: selectedRating,
-                    comment: comment
-                });
+                const now = new Date();
+                const { error } = await supabase
+                    .from('ratings')
+                    .upsert([
+                        {
+                            user: currentUser.username,
+                            rating: selectedRating,
+                            comment: comment,
+                            created_at: now.toISOString()
+                        }
+                    ], {
+                        onConflict: 'user'
+                    });
                 
-                if (result.success) {
-                    document.getElementById('ratingComment').value = '';
-                    selectedRating = 0;
-                    highlightStars(0);
-                    await loadRatings();
-                    showNotification('Terima kasih atas rating Anda!');
-                } else {
-                    showNotification('Gagal menyimpan rating: ' + (result.message || 'Unknown error'));
-                }
+                if (error) throw error;
+                
+                document.getElementById('ratingComment').value = '';
+                selectedRating = 0;
+                highlightStars(0);
+                await loadRatings();
+                showNotification('Terima kasih atas rating Anda!');
+                
             } catch (error) {
                 console.error('Error submitting rating:', error);
                 showNotification('Gagal menyimpan rating');
@@ -3151,14 +3242,16 @@
         
         async function loadRatings() {
             try {
-                const result = await apiRequest('get-ratings.php');
-                if (result.success) {
-                    ratings = result.data || [];
-                    updateRatingStats();
-                    loadReviews();
-                } else {
-                    throw new Error('Failed to load ratings');
-                }
+                const { data, error } = await supabase
+                    .from('ratings')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                ratings = data || [];
+                updateRatingStats();
+                loadReviews();
             } catch (error) {
                 console.error('Error loading ratings:', error);
             }
@@ -3210,9 +3303,7 @@
             const reviewsList = document.getElementById('reviewsList');
             reviewsList.innerHTML = '';
             
-            const latestReviews = [...ratings]
-                .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
-                .slice(0, 5);
+            const latestReviews = [...ratings].slice(0, 5);
             
             if (latestReviews.length === 0) {
                 reviewsList.innerHTML = '<p style="color:var(--gray-medium);text-align:center;">Belum ada ulasan. Jadilah yang pertama memberikan ulasan!</p>';
@@ -3232,13 +3323,20 @@
                     }
                 }
                 
+                const date = new Date(review.created_at);
+                const dateString = date.toLocaleDateString('id-ID', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                
                 reviewElement.innerHTML = `
                     <div class="review-header">
                         <div>
                             <strong>${review.user}</strong>
                             <div style="margin-top: 5px;">${starsHtml}</div>
                         </div>
-                        <span style="font-size:0.8em;color:var(--gray-medium);">${review.date || ''}</span>
+                        <span style="font-size:0.8em;color:var(--gray-medium);">${dateString}</span>
                     </div>
                     ${review.comment ? `<p style="margin-top:10px;">${review.comment}</p>` : ''}
                 `;
@@ -3294,4 +3392,4 @@
         document.head.appendChild(style);
     </script>
 </body>
-</html>
+                                </html>
