@@ -142,12 +142,48 @@
             padding: 5px;
         }
 
+        /* Music Button */
+        .music-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--accent-red);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            z-index: 999;
+        }
+
+        .music-btn:hover {
+            transform: scale(1.1);
+            background-color: var(--accent-red-dark);
+        }
+
+        .music-btn.playing {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 51, 102, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0); }
+        }
+
         /* Page Navigation Buttons */
         .page-nav {
             position: fixed;
-            bottom: 20px;
+            bottom: 85px;
             right: 20px;
-            z-index: 999;
+            z-index: 998;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -904,7 +940,7 @@
             margin-right: 8px;
         }
 
-        /* Chat System */
+        /* Chat System - IMPROVED */
         .chat-container {
             background-color: var(--primary-black);
             border-radius: 12px;
@@ -966,19 +1002,57 @@
         .chat-input-container {
             display: flex;
             gap: 8px;
+            align-items: center;
+            position: relative;
+            width: 100%;
         }
 
         .chat-input {
             flex: 1;
-            padding: 10px 12px;
+            padding: 10px 45px 10px 12px;
             border-radius: 20px;
             background-color: var(--secondary-black);
             border: 1px solid var(--gray-dark);
             color: var(--primary-white);
             font-size: 0.9rem;
+            min-height: 44px;
+            resize: none;
+            font-family: 'Poppins', sans-serif;
         }
 
-        /* Rating System - IMPROVED */
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent-red);
+        }
+
+        .chat-send-btn {
+            position: absolute;
+            right: 5px;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background-color: var(--accent-red);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            z-index: 2;
+        }
+
+        .chat-send-btn:hover:not(:disabled) {
+            background-color: var(--accent-red-dark);
+            transform: scale(1.05);
+        }
+
+        .chat-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Rating System */
         .rating-container {
             background-color: var(--primary-black);
             border-radius: 12px;
@@ -1058,7 +1132,7 @@
             font-size: 0.9rem;
         }
 
-        /* Reviews Container (like chat) */
+        /* Reviews Container */
         .reviews-container {
             background-color: var(--primary-black);
             border-radius: 12px;
@@ -1143,6 +1217,37 @@
             font-style: italic;
         }
 
+        /* Coming Soon Pages */
+        .coming-soon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 70vh;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .coming-soon-icon {
+            font-size: 4rem;
+            color: var(--accent-red);
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        .coming-soon h2 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--primary-white);
+        }
+
+        .coming-soon p {
+            color: var(--gray-medium);
+            max-width: 600px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
         /* Footer */
         footer {
             background-color: var(--secondary-black);
@@ -1200,11 +1305,6 @@
             margin-bottom: 20px;
         }
 
-        /* Spotify iframe responsive */
-        iframe {
-            max-width: 100%;
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
             .container {
@@ -1255,8 +1355,16 @@
             }
             
             .page-nav {
-                bottom: 15px;
+                bottom: 80px;
                 right: 15px;
+            }
+            
+            .music-btn {
+                bottom: 15px;
+                left: 15px;
+                width: 45px;
+                height: 45px;
+                font-size: 1.1rem;
             }
             
             .page-nav-btn {
@@ -1303,8 +1411,17 @@
                 height: 200px;
             }
             
-            iframe {
-                min-height: 300px !important;
+            .chat-input {
+                font-size: 16px; /* Prevent zoom on iOS */
+                min-height: 46px;
+            }
+            
+            .coming-soon-icon {
+                font-size: 3rem;
+            }
+            
+            .coming-soon h2 {
+                font-size: 2rem;
             }
         }
 
@@ -1387,8 +1504,12 @@
                 font-size: 1.7rem;
             }
             
-            iframe {
-                min-height: 250px !important;
+            .coming-soon-icon {
+                font-size: 2.5rem;
+            }
+            
+            .coming-soon h2 {
+                font-size: 1.8rem;
             }
         }
 
@@ -1416,6 +1537,22 @@
             #snakeCanvas {
                 max-width: 280px;
             }
+            
+            .music-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+            
+            .page-nav-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 0.8rem;
+            }
+            
+            .page-nav {
+                bottom: 70px;
+            }
         }
 
         /* Landscape Mode */
@@ -1440,6 +1577,16 @@
             .chat-messages, .reviews-messages {
                 height: 150px;
             }
+            
+            .music-btn {
+                bottom: 10px;
+                left: 10px;
+            }
+            
+            .page-nav {
+                bottom: 70px;
+                right: 10px;
+            }
         }
     </style>
 </head>
@@ -1451,12 +1598,20 @@
             <div class="nav-links">
                 <a href="#page1" class="nav-link active" data-page="page1">Home</a>
                 <a href="#page2" class="nav-link" data-page="page2">Minigames</a>
+                <a href="#page3" class="nav-link" data-page="page3">Gallery</a>
+                <a href="#page4" class="nav-link" data-page="page4">Blog</a>
+                <a href="#page5" class="nav-link" data-page="page5">Contact</a>
             </div>
             <button class="mobile-menu-btn">
                 <i class="fas fa-bars"></i>
             </button>
         </div>
     </nav>
+
+    <!-- Music Button -->
+    <button class="music-btn" id="musicBtn">
+        <i class="fas fa-music"></i>
+    </button>
 
     <!-- Page 1: Home/Portfolio -->
     <div class="page active" id="page1">
@@ -1499,10 +1654,6 @@
                         <a href="https://instagram.com/al_majid.16" class="btn" target="_blank">
                             <i class="fab fa-instagram"></i>
                             <span>Instagram</span>
-                        </a>
-                        <a href="#" class="btn" id="spotifyBtn">
-                            <i class="fab fa-spotify"></i>
-                            <span>Spotify Playlist</span>
                         </a>
                         <a href="mailto:almajidnafi@gmail.com" class="btn">
                             <i class="fas fa-envelope"></i>
@@ -1676,8 +1827,8 @@
                         </div>
                     </div>
                     <div class="chat-input-container">
-                        <input type="text" class="chat-input" id="chatInput" placeholder="Ketik pesan Anda..." disabled>
-                        <button class="btn btn-primary" id="chatSend" disabled>
+                        <textarea class="chat-input" id="chatInput" placeholder="Ketik pesan Anda..." rows="1" disabled></textarea>
+                        <button class="chat-send-btn" id="chatSend" disabled>
                             <i class="fas fa-paper-plane"></i>
                         </button>
                     </div>
@@ -1737,8 +1888,65 @@
         </div>
     </div>
 
+    <!-- Page 3: Gallery (Coming Soon) -->
+    <div class="page" id="page3">
+        <div class="container">
+            <div class="coming-soon">
+                <div class="coming-soon-icon">
+                    <i class="fas fa-images"></i>
+                </div>
+                <h2>Gallery</h2>
+                <p>Halaman gallery sedang dalam pengembangan. Di sini akan menampilkan koleksi foto, karya, dan proyek yang telah dikerjakan.</p>
+                <button class="btn btn-primary" onclick="switchPage('page1')">
+                    <i class="fas fa-home"></i> Kembali ke Home
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 4: Blog (Coming Soon) -->
+    <div class="page" id="page4">
+        <div class="container">
+            <div class="coming-soon">
+                <div class="coming-soon-icon">
+                    <i class="fas fa-blog"></i>
+                </div>
+                <h2>Blog</h2>
+                <p>Halaman blog sedang dalam pengembangan. Di sini akan berisi artikel, tutorial, dan pemikiran tentang teknologi, pengembangan web, dan topik menarik lainnya.</p>
+                <button class="btn btn-primary" onclick="switchPage('page1')">
+                    <i class="fas fa-home"></i> Kembali ke Home
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 5: Contact (Coming Soon) -->
+    <div class="page" id="page5">
+        <div class="container">
+            <div class="coming-soon">
+                <div class="coming-soon-icon">
+                    <i class="fas fa-address-book"></i>
+                </div>
+                <h2>Contact</h2>
+                <p>Halaman kontak sedang dalam pengembangan. Di sini akan berisi form kontak, informasi lengkap, dan cara terbaik untuk menghubungi saya.</p>
+                <button class="btn btn-primary" onclick="switchPage('page1')">
+                    <i class="fas fa-home"></i> Kembali ke Home
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Page Navigation Buttons -->
     <div class="page-nav">
+        <button class="page-nav-btn" id="toPage5" title="Ke Contact">
+            <i class="fas fa-address-book"></i>
+        </button>
+        <button class="page-nav-btn" id="toPage4" title="Ke Blog">
+            <i class="fas fa-blog"></i>
+        </button>
+        <button class="page-nav-btn" id="toPage3" title="Ke Gallery">
+            <i class="fas fa-images"></i>
+        </button>
         <button class="page-nav-btn" id="toPage2" title="Ke Minigames">
             <i class="fas fa-gamepad"></i>
         </button>
@@ -1782,12 +1990,15 @@
         let currentGame = null;
         let selectedRating = 0;
         let currentSessionId = null;
+        let backgroundMusic = null;
+        let isMusicPlaying = false;
         
         // ============== INITIALIZATION ==============
         document.addEventListener('DOMContentLoaded', function() {
             initializeApp();
             initializeParticles();
             updateActiveUsersCount();
+            initializeMusic();
         });
 
         async function initializeApp() {
@@ -1816,8 +2027,8 @@
             // Reviews System
             setupReviews();
             
-            // Spotify Modal
-            setupSpotifyModal();
+            // Music System
+            setupMusic();
             
             // Check if user is already logged in
             await checkLoginStatus();
@@ -1835,38 +2046,52 @@
             }, 5000);
         }
 
-        // ============== SPOTIFY MODAL ==============
-        function setupSpotifyModal() {
-            const spotifyBtn = document.getElementById('spotifyBtn');
-            const gameModal = document.getElementById('gameModal');
-            const gameModalContent = document.getElementById('gameModalContent');
-            const closeGameModal = document.getElementById('closeGameModal');
+        // ============== MUSIC SYSTEM ==============
+        function initializeMusic() {
+            backgroundMusic = new Audio('suara.mp3');
+            backgroundMusic.loop = true;
+            backgroundMusic.volume = 0.5;
             
-            spotifyBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // Tampilkan modal dengan iframe Spotify
-                gameModalContent.innerHTML = `
-                    <div style="text-align: center; padding: 20px 10px;">
-                        <h3 style="margin-bottom: 15px; color: var(--accent-red);">My Spotify Playlist</h3>
-                        <div style="max-width: 100%; margin: 0 auto;">
-                            <iframe style="border-radius: 12px; width: 100%; min-height: 380px;" 
-                                    src="https://open.spotify.com/embed/playlist/5nKOoaqObDaARYtLFaY6Tc?si=toteXpGCQsW-MQKCFVzTkA&utm_source=generator&theme=0" 
-                                    frameBorder="0" 
-                                    allowfullscreen="" 
-                                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
-                                    loading="lazy">
-                            </iframe>
-                        </div>
-                        <p style="margin-top: 15px; color: var(--gray-medium); font-size: 0.9rem;">
-                            Dengarkan playlist favorit saya di Spotify
-                        </p>
-                    </div>
-                `;
-                
-                gameModal.classList.add('active');
-                document.body.style.overflow = 'hidden';
+            // Cek status musik dari localStorage
+            const savedMusicState = localStorage.getItem('musicPlaying');
+            if (savedMusicState === 'true') {
+                toggleMusic(true);
+            }
+        }
+        
+        function setupMusic() {
+            const musicBtn = document.getElementById('musicBtn');
+            musicBtn.addEventListener('click', function() {
+                toggleMusic();
             });
+        }
+        
+        function toggleMusic(forceState = null) {
+            if (forceState === true) {
+                isMusicPlaying = true;
+            } else if (forceState === false) {
+                isMusicPlaying = false;
+            } else {
+                isMusicPlaying = !isMusicPlaying;
+            }
+            
+            const musicBtn = document.getElementById('musicBtn');
+            
+            if (isMusicPlaying) {
+                backgroundMusic.play().catch(e => {
+                    console.log('Autoplay prevented, waiting for user interaction');
+                    musicBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    isMusicPlaying = false;
+                });
+                musicBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                musicBtn.classList.add('playing');
+            } else {
+                backgroundMusic.pause();
+                musicBtn.innerHTML = '<i class="fas fa-music"></i>';
+                musicBtn.classList.remove('playing');
+            }
+            
+            localStorage.setItem('musicPlaying', isMusicPlaying);
         }
 
         // ============== DATA MANAGEMENT ==============
@@ -1991,29 +2216,28 @@
 
         // ============== PAGE NAVIGATION ==============
         function setupPageNavigation() {
-            document.getElementById('toPage1').addEventListener('click', function() {
-                switchPage('page1');
-                document.querySelectorAll('.nav-link').forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('data-page') === 'page1') {
-                        link.classList.add('active');
-                    }
-                });
+            // Setup navigation untuk semua halaman
+            const pages = ['page1', 'page2', 'page3', 'page4', 'page5'];
+            
+            pages.forEach(pageId => {
+                const btn = document.getElementById(`to${pageId.charAt(0).toUpperCase() + pageId.slice(1)}`);
+                if (btn) {
+                    btn.addEventListener('click', function() {
+                        switchPage(pageId);
+                        document.querySelectorAll('.nav-link').forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('data-page') === pageId) {
+                                link.classList.add('active');
+                            }
+                        });
+                    });
+                }
             });
             
-            document.getElementById('toPage2').addEventListener('click', function() {
-                switchPage('page2');
-                document.querySelectorAll('.nav-link').forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('data-page') === 'page2') {
-                        link.classList.add('active');
-                    }
-                });
-            });
-            
+            // Handle hash di URL
             if (window.location.hash) {
                 const pageId = window.location.hash.substring(1);
-                if (pageId === 'page1' || pageId === 'page2') {
+                if (pages.includes(pageId)) {
                     switchPage(pageId);
                     document.querySelectorAll('.nav-link').forEach(link => {
                         link.classList.remove('active');
@@ -3499,12 +3723,22 @@
             const chatInput = document.getElementById('chatInput');
             
             chatSendBtn.addEventListener('click', sendChatMessage);
-            chatInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') sendChatMessage();
+            chatInput.addEventListener('input', autoResizeTextarea);
+            chatInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendChatMessage();
+                }
             });
             
             await loadChatMessages();
             setInterval(loadChatMessages, 3000);
+        }
+        
+        function autoResizeTextarea() {
+            const textarea = document.getElementById('chatInput');
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
         }
         
         async function sendChatMessage() {
@@ -3541,6 +3775,7 @@
                 if (error) throw error;
                 
                 chatInput.value = '';
+                chatInput.style.height = 'auto';
                 await loadChatMessages();
                 
                 const chatMessagesContainer = document.getElementById('chatMessages');
@@ -3913,6 +4148,9 @@
                 drawSnakeGame();
             }
         });
+
+        // Make switchPage available globally
+        window.switchPage = switchPage;
     </script>
 </body>
 </html>
