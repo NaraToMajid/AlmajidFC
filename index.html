@@ -1493,28 +1493,6 @@
             to { opacity: 0; }
         }
 
-        /* Support Message */
-        .support-message {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--accent-red);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            box-shadow: var(--shadow);
-            z-index: 997;
-            display: none;
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from { transform: translate(-50%, 20px); opacity: 0; }
-            to { transform: translate(-50%, 0); opacity: 1; }
-        }
-
         /* Utility Classes */
         .hidden {
             display: none !important;
@@ -1656,10 +1634,7 @@
             .skills-stats-container {
                 grid-template-columns: 1fr;
             }
-            
-            .support-message {
-                display: block;
-            }
+   
         }
 
         @media (max-width: 480px) {
@@ -1841,11 +1816,6 @@
     <button class="music-btn" id="musicBtn">
         <i class="fas fa-music"></i>
     </button>
-
-    <!-- Support Message (for portrait mode) -->
-    <div class="support-message" id="supportMessage">
-        <i class="fas fa-info-circle"></i> Putar HP untuk pengalaman terbaik
-    </div>
 
     <!-- Page 1: Home/Portfolio -->
     <div class="page active" id="page1">
@@ -2401,9 +2371,6 @@
             
             // Contact Form
             setupContactForm();
-            
-            // Support message untuk portrait mode
-            setupSupportMessage();
             
             // Check if user is already logged in
             await checkLoginStatus();
@@ -4584,24 +4551,6 @@
         function validateEmail(email) {
             const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return re.test(email);
-        }
-
-        // ============== SUPPORT MESSAGE ==============
-        function setupSupportMessage() {
-            // Cek apakah dalam portrait mode
-            function checkOrientation() {
-                if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
-                    // Portrait mode
-                    document.getElementById('supportMessage').style.display = 'block';
-                } else {
-                    // Landscape mode atau desktop
-                    document.getElementById('supportMessage').style.display = 'none';
-                }
-            }
-            
-            checkOrientation();
-            window.addEventListener('resize', checkOrientation);
-            window.addEventListener('orientationchange', checkOrientation);
         }
 
         // ============== UTILITY FUNCTIONS ==============
