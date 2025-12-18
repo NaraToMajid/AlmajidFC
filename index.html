@@ -3,7 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Al-Majid | Portfolio & Minigames</title>
+    <!-- SEO Meta Tags -->
+    <title>Al-Majid | Portfolio & Minigames - Full-Stack Developer & Game Creator</title>
+    <meta name="description" content="Portfolio Al-Majid dengan koleksi minigames seru: Memory Card, Reaction Test, Trivia Quiz, Typing Speed, Tic Tac Toe, dan Snake Game. Full-Stack Developer dari Indonesia.">
+    <meta name="keywords" content="portfolio, minigames, game online, developer Indonesia, full-stack developer, HTML5 games, JavaScript games, web developer, portfolio website">
+    <meta name="author" content="Al-Majid created by oradev">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Al-Majid | Portfolio & Minigames">
+    <meta property="og:description" content="Portfolio dan koleksi minigames seru yang bisa dimainkan secara online">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://yourdomain.com">
+    <meta property="og:image" content="https://yourdomain.com/profile.webp">
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,6 +34,8 @@
             --primary-white: #ffffff;
             --accent-red: #ff3366;
             --accent-red-dark: #cc0044;
+            --accent-blue: #3366ff;
+            --accent-green: #33cc33;
             --gray-light: #f0f0f0;
             --gray-medium: #888;
             --gray-dark: #333;
@@ -142,10 +157,18 @@
             padding: 5px;
         }
 
-        /* Music Button - Pindah ke atas tombol titik 4 */
+        /* Page Navigation Buttons */
+.page-nav {
+    position: fixed;
+    bottom: 140px; /* Di atas tombol musik */
+    right: 20px;
+    z-index: 998;
+}
+
+/* Music Button - Di bawah tombol titik 3 untuk portrait mode */
 .music-btn {
     position: fixed;
-    bottom: 20px; /* Tetap di paling bawah */
+    bottom: 85px; /* Di bawah tombol titik 3 */
     right: 20px; /* Di sebelah kanan */
     width: 50px;
     height: 50px;
@@ -161,14 +184,6 @@
     box-shadow: var(--shadow);
     transition: var(--transition);
     z-index: 999;
-}
-
-/* Page Navigation Buttons */
-.page-nav {
-    position: fixed;
-    bottom: 85px; /* Di atas tombol musik */
-    right: 20px;
-    z-index: 998;
 }
 
 /* Nav Toggle Button */
@@ -838,7 +853,7 @@
             opacity: 0.7;
         }
 
-        /* Snake Game */
+        /* Snake Game - UPDATED */
         .snake-container {
             max-width: 100%;
             margin: 0 auto;
@@ -846,7 +861,7 @@
         }
 
         #snakeCanvas {
-            background-color: var(--secondary-black);
+            background-color: var(--accent-green); /* Warna hijau untuk map */
             border-radius: 8px;
             border: 1px solid var(--gray-dark);
             max-width: 100%;
@@ -965,7 +980,7 @@
             margin-right: 8px;
         }
 
-        /* Chat System - IMPROVED */
+        /* Chat System */
         .chat-container {
             background-color: var(--primary-black);
             border-radius: 12px;
@@ -1425,60 +1440,46 @@
         }
 
         @media (max-width: 768px) {
-    .page-nav {
-        bottom: 80px; /* Di atas tombol musik */
-        right: 15px;
-    }
-    
-    .music-btn {
-        bottom: 15px; /* Tetap di paling bawah */
-        right: 15px;
-        width: 45px;
-        height: 45px;
-        font-size: 1.1rem;
-    }
-}
+            .page-nav {
+                bottom: 125px; /* Di atas tombol musik */
+                right: 15px;
+            }
+            
+            .music-btn {
+                bottom: 70px; /* Di bawah tombol titik 3 */
+                right: 15px;
+                width: 45px;
+                height: 45px;
+                font-size: 1.1rem;
+            }
+        }
 
-@media (max-width: 480px) {
-    .page-nav {
-        bottom: 75px;
-        right: 10px;
-    }
-    
-    .music-btn {
-        bottom: 15px;
-        right: 10px;
-        width: 40px;
-        height: 40px;
-        font-size: 1rem;
-    }
-}
+        @media (max-width: 480px) {
+            .page-nav {
+                bottom: 120px;
+                right: 10px;
+            }
+            
+            .music-btn {
+                bottom: 65px;
+                right: 10px;
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+        }
 
-@media (max-width: 360px) {
-    .page-nav {
-        bottom: 70px;
-    }
-    
-    .music-btn {
-        bottom: 15px;
-        width: 35px;
-        height: 35px;
-        font-size: 0.9rem;
-    }
-}
-
-/* Landscape Mode */
-@media (max-height: 500px) and (orientation: landscape) {
-    .page-nav {
-        bottom: 70px;
-        right: 10px;
-    }
-    
-    .music-btn {
-        bottom: 10px;
-        right: 10px;
-    }
-
+        @media (max-width: 360px) {
+            .page-nav {
+                bottom: 115px;
+            }
+            
+            .music-btn {
+                bottom: 60px;
+                width: 35px;
+                height: 35px;
+                font-size: 0.9rem;
+            }
         }
 
         /* Footer */
@@ -1587,31 +1588,6 @@
                 font-size: 0.8rem;
             }
             
-            .page-nav {
-                bottom: 80px;
-                right: 15px;
-            }
-            
-            .music-btn {
-                bottom: 15px;
-                left: 15px;
-                width: 45px;
-                height: 45px;
-                font-size: 1.1rem;
-            }
-            
-            .page-nav-btn {
-                width: 40px;
-                height: 40px;
-                font-size: 0.9rem;
-            }
-            
-            .nav-toggle-btn {
-                width: 40px;
-                height: 40px;
-                font-size: 0.9rem;
-            }
-            
             .game-modal-content {
                 padding: 15px;
             }
@@ -1666,7 +1642,6 @@
             .skills-stats-container {
                 grid-template-columns: 1fr;
             }
-   
         }
 
         @media (max-width: 480px) {
@@ -1774,20 +1749,10 @@
                 max-width: 280px;
             }
             
-            .music-btn {
-                width: 40px;
-                height: 40px;
-                font-size: 1rem;
-            }
-            
             .page-nav-btn, .nav-toggle-btn {
                 width: 35px;
                 height: 35px;
                 font-size: 0.8rem;
-            }
-            
-            .page-nav {
-                bottom: 70px;
             }
         }
 
@@ -1814,12 +1779,12 @@
                 height: 150px;
             }
             
-            .music-btn {
-                bottom: 10px;
-                left: 10px;
+            .page-nav {
+                bottom: 120px;
+                right: 10px;
             }
             
-            .page-nav {
+            .music-btn {
                 bottom: 70px;
                 right: 10px;
             }
@@ -1844,6 +1809,30 @@
         </div>
     </nav>
 
+    <!-- Page Navigation Buttons -->
+    <div class="page-nav">
+        <div class="nav-buttons-container" id="navButtonsContainer">
+            <button class="page-nav-btn" id="toPage5" title="Ke Contact">
+                <i class="fas fa-address-book"></i>
+            </button>
+            <button class="page-nav-btn" id="toPage4" title="Ke Skills">
+                <i class="fas fa-code"></i>
+            </button>
+            <button class="page-nav-btn" id="toPage3" title="Ke Gallery">
+                <i class="fas fa-images"></i>
+            </button>
+            <button class="page-nav-btn" id="toPage2" title="Ke Minigames">
+                <i class="fas fa-gamepad"></i>
+            </button>
+            <button class="page-nav-btn" id="toPage1" title="Ke Home">
+                <i class="fas fa-home"></i>
+            </button>
+        </div>
+        <button class="nav-toggle-btn" id="navToggle">
+            <i class="fas fa-ellipsis-v"></i>
+        </button>
+    </div>
+
     <!-- Music Button -->
     <button class="music-btn" id="musicBtn">
         <i class="fas fa-music"></i>
@@ -1857,7 +1846,7 @@
                 <div class="hero-content">
                     <div class="profile-container">
                         <div class="profile-img" id="profileImage">
-                            <img src="profile.webp" alt="Al-Majid Profile" style="width:100%;height:100%;object-fit:cover;">
+                            <img src="profile.webp" alt="Al-Majid Profile" style="width:100%;height:100%;object-fit:cover;" onerror="this.src='https://via.placeholder.com/150/1a1a1a/ff3366?text=AM'">
                         </div>
                     </div>
                     <h1 class="main-title">Al-Majid</h1>
@@ -1875,19 +1864,19 @@
                             <i class="fas fa-share-alt"></i>
                             <span>Share Website</span>
                         </a>
-                        <a href="https://wa.me/6283853185739" class="btn" target="_blank">
+                        <a href="https://wa.me/6283853185739" class="btn" target="_blank" rel="noopener noreferrer">
                             <i class="fab fa-whatsapp"></i>
                             <span>WhatsApp</span>
                         </a>
-                        <a href="https://facebook.com/almajid.nafi" class="btn" target="_blank">
+                        <a href="https://facebook.com/almajid.nafi" class="btn" target="_blank" rel="noopener noreferrer">
                             <i class="fab fa-facebook-f"></i>
                             <span>Facebook</span>
                         </a>
-                        <a href="https://tiktok.com/@orasampurna" class="btn" target="_blank">
+                        <a href="https://tiktok.com/@orasampurna" class="btn" target="_blank" rel="noopener noreferrer">
                             <i class="fab fa-tiktok"></i>
                             <span>TikTok</span>
                         </a>
-                        <a href="https://instagram.com/al_majid.16" class="btn" target="_blank">
+                        <a href="https://instagram.com/al_majid.16" class="btn" target="_blank" rel="noopener noreferrer">
                             <i class="fab fa-instagram"></i>
                             <span>Instagram</span>
                         </a>
@@ -1895,11 +1884,11 @@
                             <i class="fas fa-envelope"></i>
                             <span>Gmail</span>
                         </a>
-                        <a href="https://github.com/NaraToMajid" class="btn" target="_blank">
+                        <a href="https://github.com/NaraToMajid" class="btn" target="_blank" rel="noopener noreferrer">
                             <i class="fab fa-github"></i>
                             <span>GitHub</span>
                         </a>
-                        <a href="https://open.spotify.com/embed/playlist/5nKOoaqObDaARYtLFaY6Tc?si=toteXpGCQsW-MQKCFVzTkA" class="btn" target="_blank">
+                        <a href="https://open.spotify.com/embed/playlist/5nKOoaqObDaARYtLFaY6Tc?si=toteXpGCQsW-MQKCFVzTkA" class="btn" target="_blank" rel="noopener noreferrer">
                             <i class="fab fa-spotify"></i>
                             <span>Spotify</span>
                         </a>
@@ -2137,32 +2126,32 @@
                 
                 <div class="gallery-grid">
                     <div class="gallery-item">
-                        <img src="foto1.webp" alt="Foto 1" class="gallery-img" onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/ff3366?text=Foto+1'">
+                        <img src="foto1.webp" alt="Sistem Tata Surya threejs" class="gallery-img" onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/ff3366?text=Sistem+Tata+Surya'">
                         <div class="gallery-caption">Sistem Tata Surya yang dibangun dengan threejs</div>
                     </div>
                     
                     <div class="gallery-item">
-                        <img src="foto2.webp" alt="Foto 2" class="gallery-img" onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/ff3366?text=Foto+2'">
+                        <img src="foto2.webp" alt="Website game luar angkasa" class="gallery-img" onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/ff3366?text=Game+Luar+Angkasa'">
                         <div class="gallery-caption">Proyek website game tema luar angkasa simpel</div>
                     </div>
                     
                     <div class="gallery-item">
-                        <img src="foto3.webp" alt="Foto 3" class="gallery-img" onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/ff3366?text=Foto+3'">
+                        <img src="foto3.webp" alt="Portfolio glass blur" class="gallery-img" onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/ff3366?text=Portfolio+Glass+Blur'">
                         <div class="gallery-caption">website portfolio dengan tema glass blur</div>
                     </div>
                     
                     <div class="gallery-item">
-                        <img src="foto4.webp" alt="Foto 4" class="gallery-img" onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/ff3366?text=Foto+4'">
+                        <img src="foto4.webp" alt="Sistem matematika partikel" class="gallery-img" onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/ff3366?text=Matematika+Partikel'">
                         <div class="gallery-caption">sistem javascript matematika menggunakan partikel</div>
                     </div>
                     
                     <div class="gallery-item">
-                        <img src="foto5.webp" alt="Foto 5" class="gallery-img" onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/ff3366?text=Foto+5'">
+                        <img src="foto5.webp" alt="Kubus 3D editable" class="gallery-img" onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/ff3366?text=Kubus+3D+360'">
                         <div class="gallery-caption">kubus 3d dengan efek bisa diedit sesuka hati dan putar 360 derajat</div>
                     </div>
                     
                     <div class="gallery-item">
-                        <img src="foto6.webp" alt="Foto 6" class="gallery-img" onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/ff3366?text=Foto+6'">
+                        <img src="foto6.webp" alt="Pet Simulator" class="gallery-img" onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/ff3366?text=Pet+Simulator'">
                         <div class="gallery-caption">pet simulator, seperti tamagotchi, bisa dikasih makan dan pelihara</div>
                     </div>
                 </div>
@@ -2285,30 +2274,6 @@
                 </div>
             </section>
         </div>
-    </div>
-
-    <!-- Page Navigation Buttons -->
-    <div class="page-nav">
-        <div class="nav-buttons-container" id="navButtonsContainer">
-            <button class="page-nav-btn" id="toPage5" title="Ke Contact">
-                <i class="fas fa-address-book"></i>
-            </button>
-            <button class="page-nav-btn" id="toPage4" title="Ke Skills">
-                <i class="fas fa-code"></i>
-            </button>
-            <button class="page-nav-btn" id="toPage3" title="Ke Gallery">
-                <i class="fas fa-images"></i>
-            </button>
-            <button class="page-nav-btn" id="toPage2" title="Ke Minigames">
-                <i class="fas fa-gamepad"></i>
-            </button>
-            <button class="page-nav-btn" id="toPage1" title="Ke Home">
-                <i class="fas fa-home"></i>
-            </button>
-        </div>
-        <button class="nav-toggle-btn" id="navToggle">
-            <i class="fas fa-ellipsis-v"></i>
-        </button>
     </div>
 
     <!-- Game Modals -->
@@ -2563,8 +2528,8 @@
                 
                 if (navigator.share && window.innerWidth <= 768) {
                     navigator.share({
-                        title: 'Al-Majid Portfolio',
-                        text: 'Kunjungi portfolio dan mainkan minigames seru!',
+                        title: 'Al-Majid Portfolio & Minigames',
+                        text: 'Kunjungi portfolio dan mainkan minigames seru! Website developer Indonesia dengan koleksi game online gratis.',
                         url: url,
                     })
                     .catch(console.error);
@@ -3281,68 +3246,153 @@
             {
                 question: "Apa ibu kota Indonesia?",
                 options: ["Jakarta", "Surabaya", "Bandung", "Medan"],
-                answer: 0
+                answer: 0,
+                category: "Umum"
             },
             {
                 question: "Planet terdekat dengan matahari adalah?",
                 options: ["Venus", "Mars", "Merkurius", "Bumi"],
-                answer: 2
+                answer: 2,
+                category: "Sains"
             },
             {
                 question: "Siapa penemu teori relativitas?",
                 options: ["Isaac Newton", "Albert Einstein", "Nikola Tesla", "Thomas Edison"],
-                answer: 1
+                answer: 1,
+                category: "Sains"
             },
             {
                 question: "Berapakah hasil dari 7 x 8?",
                 options: ["54", "56", "58", "60"],
-                answer: 1
+                answer: 1,
+                category: "Matematika"
             },
             {
                 question: "Apa warna yang dihasilkan dari pencampuran merah dan biru?",
                 options: ["Hijau", "Kuning", "Ungu", "Oranye"],
-                answer: 2
+                answer: 2,
+                category: "Seni"
             },
             {
                 question: "Siapakah presiden pertama Indonesia?",
                 options: ["Soeharto", "Soekarno", "Joko Widodo", "BJ Habibie"],
-                answer: 1
+                answer: 1,
+                category: "Sejarah"
             },
             {
                 question: "Hewan apa yang dikenal sebagai 'raja hutan'?",
                 options: ["Harimau", "Singa", "Gajah", "Jerapah"],
-                answer: 1
+                answer: 1,
+                category: "Hewan"
             },
             {
                 question: "Berapakah jumlah provinsi di Indonesia saat ini?",
                 options: ["34", "33", "32", "31"],
-                answer: 0
+                answer: 0,
+                category: "Geografi"
             },
             {
                 question: "Apa nama satelit alami Bumi?",
                 options: ["Mars", "Venus", "Bulan", "Matahari"],
-                answer: 2
+                answer: 2,
+                category: "Astronomi"
             },
             {
                 question: "Siapa penulis novel 'Laskar Pelangi'?",
                 options: ["Tere Liye", "Andrea Hirata", "Dee Lestari", "Pramoedya Ananta Toer"],
-                answer: 1
+                answer: 1,
+                category: "Sastra"
+            },
+            {
+                question: "Apa lambang kimia untuk air?",
+                options: ["H2O", "CO2", "O2", "NaCl"],
+                answer: 0,
+                category: "Kimia"
+            },
+            {
+                question: "Berapa jumlah kaki laba-laba?",
+                options: ["6", "8", "10", "12"],
+                answer: 1,
+                category: "Hewan"
+            },
+            {
+                question: "Apa nama benua terbesar di dunia?",
+                options: ["Afrika", "Amerika", "Asia", "Eropa"],
+                answer: 2,
+                category: "Geografi"
+            },
+            {
+                question: "Siapa pelukis Mona Lisa?",
+                options: ["Vincent van Gogh", "Leonardo da Vinci", "Pablo Picasso", "Michelangelo"],
+                answer: 1,
+                category: "Seni"
+            },
+            {
+                question: "Apa ibu kota Jepang?",
+                options: ["Seoul", "Beijing", "Tokyo", "Bangkok"],
+                answer: 2,
+                category: "Geografi"
+            },
+            {
+                question: "Berapa banyak sisi yang dimiliki segitiga?",
+                options: ["2", "3", "4", "5"],
+                answer: 1,
+                category: "Matematika"
+            },
+            {
+                question: "Apa nama planet terbesar di tata surya?",
+                options: ["Bumi", "Mars", "Jupiter", "Saturnus"],
+                answer: 2,
+                category: "Astronomi"
+            },
+            {
+                question: "Siapa pencipta lagu kebangsaan Indonesia Raya?",
+                options: ["WR Supratman", "Ismail Marzuki", "Gesang", "Simbah Surip"],
+                answer: 0,
+                category: "Musik"
+            },
+            {
+                question: "Apa nama gunung tertinggi di dunia?",
+                options: ["Kilimanjaro", "Everest", "Fuji", "Denali"],
+                answer: 1,
+                category: "Geografi"
+            },
+            {
+                question: "Berapa jumlah pemain dalam tim sepak bola?",
+                options: ["9", "10", "11", "12"],
+                answer: 2,
+                category: "Olahraga"
             }
         ];
         
         let currentQuizQuestionIndex = 0;
         let quizScore = 0;
+        let usedQuestions = new Set();
+        
+        function getRandomQuizQuestion() {
+            if (usedQuestions.size >= quizQuestions.length) {
+                usedQuestions.clear();
+            }
+            
+            let randomIndex;
+            do {
+                randomIndex = Math.floor(Math.random() * quizQuestions.length);
+            } while (usedQuestions.has(randomIndex));
+            
+            usedQuestions.add(randomIndex);
+            return quizQuestions[randomIndex];
+        }
         
         function loadQuizQuestion() {
             const quizContainer = document.getElementById('quizContainer');
             
-            if (currentQuizQuestionIndex >= quizQuestions.length) {
+            if (currentQuizQuestionIndex >= 10) {
                 quizContainer.innerHTML = `
                     <div class="quiz-container">
                         <div class="quiz-question">Kuis selesai!</div>
                         <div id="quizResult">
                             <p style="text-align: center; font-size: 1rem; padding: 15px; background-color: var(--secondary-black); border-radius: 8px;">
-                                Skor akhir Anda: ${quizScore}/${quizQuestions.length}<br>
+                                Skor akhir Anda: ${quizScore}/10<br>
                                 Poin yang didapat: ${quizScore * 10}
                             </p>
                         </div>
@@ -3360,6 +3410,7 @@
                 document.getElementById('quizPlayAgain').addEventListener('click', () => {
                     currentQuizQuestionIndex = 0;
                     quizScore = 0;
+                    usedQuestions.clear();
                     document.getElementById('quizScore').textContent = '0';
                     loadQuizQuestion();
                 });
@@ -3367,11 +3418,14 @@
                 return;
             }
             
-            const question = quizQuestions[currentQuizQuestionIndex];
+            const question = getRandomQuizQuestion();
             
             quizContainer.innerHTML = `
                 <div class="quiz-container">
-                    <div class="quiz-question">Pertanyaan ${currentQuizQuestionIndex + 1}: ${question.question}</div>
+                    <div class="quiz-question">
+                        Pertanyaan ${currentQuizQuestionIndex + 1}/10: ${question.question}<br>
+                        <small style="color: var(--accent-red); font-size: 0.8rem;">Kategori: ${question.category}</small>
+                    </div>
                     <div class="quiz-options" id="quizOptions"></div>
                     <div id="quizResult"></div>
                 </div>
@@ -3714,7 +3768,7 @@
             });
         }
 
-        // ============== SNAKE GAME ==============
+        // ============== SNAKE GAME - UPDATED ==============
         let snakeCanvas, snakeCtx;
         let snake = [];
         let snakeDirection = 'right';
@@ -3877,14 +3931,15 @@
         }
         
         function drawSnakeGame() {
-            snakeCtx.fillStyle = 'var(--secondary-black)';
+            // Draw background
+            snakeCtx.fillStyle = 'var(--accent-green)'; // Warna hijau untuk map
             snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
             
-            snakeCtx.strokeStyle = 'var(--gray-dark)';
-            snakeCtx.lineWidth = 0.5;
-            
-            // Draw grid
+            // Draw grid lines (lebih terang untuk kontras)
             const cellSize = snakeCanvas.width / 20;
+            snakeCtx.strokeStyle = '#2a8a2a'; // Hijau lebih gelap untuk grid
+            snakeCtx.lineWidth = 1;
+            
             for (let x = 0; x <= 20; x++) {
                 snakeCtx.beginPath();
                 snakeCtx.moveTo(x * cellSize, 0);
@@ -3899,26 +3954,21 @@
                 snakeCtx.stroke();
             }
             
-            // Draw snake
+            // Draw snake with blue colors
             snake.forEach((segment, index) => {
-                const gradient = snakeCtx.createLinearGradient(
-                    segment.x * cellSize, segment.y * cellSize,
-                    segment.x * cellSize + cellSize, segment.y * cellSize + cellSize
-                );
-                
                 if (index === 0) {
-                    gradient.addColorStop(0, '#ff3366');
-                    gradient.addColorStop(1, '#ff6699');
-                } else {
-                    gradient.addColorStop(0, '#cc0044');
-                    gradient.addColorStop(1, '#ff3366');
-                }
-                
-                snakeCtx.fillStyle = gradient;
-                snakeCtx.fillRect(segment.x * cellSize + 1, segment.y * cellSize + 1, cellSize - 2, cellSize - 2);
-                
-                // Draw eyes on head
-                if (index === 0) {
+                    // Kepala ular - biru tua
+                    const headGradient = snakeCtx.createLinearGradient(
+                        segment.x * cellSize, segment.y * cellSize,
+                        segment.x * cellSize + cellSize, segment.y * cellSize + cellSize
+                    );
+                    headGradient.addColorStop(0, '#3366ff'); // Biru
+                    headGradient.addColorStop(1, '#6699ff'); // Biru muda
+                    
+                    snakeCtx.fillStyle = headGradient;
+                    snakeCtx.fillRect(segment.x * cellSize + 2, segment.y * cellSize + 2, cellSize - 4, cellSize - 4);
+                    
+                    // Mata ular
                     snakeCtx.fillStyle = 'white';
                     
                     let eye1X, eye1Y, eye2X, eye2Y;
@@ -3943,14 +3993,35 @@
                     }
                     
                     snakeCtx.beginPath();
-                    snakeCtx.arc(eye1X, eye1Y, 2, 0, Math.PI * 2);
-                    snakeCtx.arc(eye2X, eye2Y, 2, 0, Math.PI * 2);
+                    snakeCtx.arc(eye1X, eye1Y, 3, 0, Math.PI * 2);
+                    snakeCtx.arc(eye2X, eye2Y, 3, 0, Math.PI * 2);
                     snakeCtx.fill();
+                    
+                    // Pupil mata
+                    snakeCtx.fillStyle = 'black';
+                    snakeCtx.beginPath();
+                    snakeCtx.arc(eye1X, eye1Y, 1, 0, Math.PI * 2);
+                    snakeCtx.arc(eye2X, eye2Y, 1, 0, Math.PI * 2);
+                    snakeCtx.fill();
+                    
+                } else {
+                    // Tubuh ular - biru dengan variasi
+                    const bodyGradient = snakeCtx.createLinearGradient(
+                        segment.x * cellSize, segment.y * cellSize,
+                        segment.x * cellSize + cellSize, segment.y * cellSize + cellSize
+                    );
+                    
+                    const shade = Math.max(20, 150 - (index * 5)); // Gradient biru
+                    bodyGradient.addColorStop(0, `rgb(${shade}, ${shade + 100}, 255)`);
+                    bodyGradient.addColorStop(1, `rgb(${shade + 30}, ${shade + 130}, 255)`);
+                    
+                    snakeCtx.fillStyle = bodyGradient;
+                    snakeCtx.fillRect(segment.x * cellSize + 2, segment.y * cellSize + 2, cellSize - 4, cellSize - 4);
                 }
             });
             
             // Draw food
-            snakeCtx.font = '16px Arial';
+            snakeCtx.font = '20px Arial';
             snakeCtx.textAlign = 'center';
             snakeCtx.textBaseline = 'middle';
             snakeCtx.fillText(currentFoodType, food.x * cellSize + cellSize/2, food.y * cellSize + cellSize/2);
@@ -4395,7 +4466,7 @@
             }
         }
 
-        // ============== REVIEWS SYSTEM (Like Chat) ==============
+        // ============== REVIEWS SYSTEM ==============
         function setupReviews() {
             document.getElementById('refreshReviews').addEventListener('click', loadReviews);
             loadReviews();
@@ -4528,57 +4599,53 @@
         }
 
         // ============== CONTACT FORM ==============
-        function setupContactForm() {
-            const collabForm = document.getElementById('collabForm');
-            
-            collabForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                if (!currentUser) {
-                    showNotification('Harap masuk terlebih dahulu untuk mengirim proposal');
-                    return;
-                }
-                
-                const formData = {
-                    name: document.getElementById('collabName').value,
-                    email: document.getElementById('collabEmail').value,
-                    subject: document.getElementById('collabSubject').value,
-                    type: document.getElementById('collabType').value,
-                    message: document.getElementById('collabMessage').value,
-                    budget: document.getElementById('collabBudget').value || 'Tidak disebutkan',
-                    user: currentUser.username,
-                    created_at: new Date().toISOString()
-                };
-                
-                // Validasi
-                if (!formData.name || !formData.email || !formData.subject || !formData.type || !formData.message) {
-                    showNotification('Harap isi semua field yang wajib diisi');
-                    return;
-                }
-                
-                if (!validateEmail(formData.email)) {
-                    showNotification('Format email tidak valid');
-                    return;
-                }
-                
-                try {
-                    const { error } = await supabase
-                        .from('collaborations')
-                        .insert([formData]);
-                    
-                    if (error) throw error;
-                    
-                    showNotification('Proposal kolaborasi berhasil dikirim! Saya akan menghubungi Anda melalui email.');
-                    
-                    // Reset form
-                    collabForm.reset();
-                    
-                } catch (error) {
-                    console.error('Error submitting collaboration:', error);
-                    showNotification('Gagal mengirim proposal: ' + error.message);
-                }
-            });
+function setupContactForm() {
+    const collabForm = document.getElementById('collabForm');
+    
+    collabForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Hapus validasi login terlebih dahulu
+        const formData = {
+            name: document.getElementById('collabName').value,
+            email: document.getElementById('collabEmail').value,
+            subject: document.getElementById('collabSubject').value,
+            type: document.getElementById('collabType').value,
+            message: document.getElementById('collabMessage').value,
+            budget: document.getElementById('collabBudget').value || 'Tidak disebutkan',
+            username: currentUser ? currentUser.username : 'guest',
+            created_at: new Date().toISOString()
+        };
+        
+        // Validasi
+        if (!formData.name || !formData.email || !formData.subject || !formData.type || !formData.message) {
+            showNotification('Harap isi semua field yang wajib diisi');
+            return;
         }
+        
+        if (!validateEmail(formData.email)) {
+            showNotification('Format email tidak valid');
+            return;
+        }
+        
+        try {
+            const { error } = await supabase
+                .from('collaborations')
+                .insert([formData]);
+            
+            if (error) throw error;
+            
+            showNotification('Proposal kolaborasi berhasil dikirim! Saya akan menghubungi Anda melalui email.');
+            
+            // Reset form
+            collabForm.reset();
+            
+        } catch (error) {
+            console.error('Error submitting collaboration:', error);
+            showNotification('Gagal mengirim proposal: ' + error.message);
+        }
+    });
+}
         
         function validateEmail(email) {
             const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
